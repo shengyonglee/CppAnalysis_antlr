@@ -13,13 +13,8 @@ std::string Person::getName()
 {
 }
 
-void Person::setName(const std::string& value)
-{
-}
-
-string Person::setName1(const std::string& value)
+void Person::setName(const std::string& v)
 {
 }
 
 
-int Person::a = 10;

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using CppParser.Enums;
 
@@ -14,6 +15,21 @@ namespace CppParser.Models
         /// class类型，默认为"class"。包括"class对应类图中的类"、"struct对应类图中的类"、"interface对应类图中的接口"
         /// </summary>
         public EnumClassType Stereotype { get; set; } = EnumClassType.Class;
+
+        /// <summary>
+        /// 是否包含公有区段，一定有，构造函数时默认包含
+        /// </summary>
+        public bool hasPublicSection { get; set; } = true;
+
+        /// <summary>
+        /// 是否包含保护区段，需要进一步解析
+        /// </summary>
+        public bool hasProtectedSection { get; set; } = false;
+
+        /// <summary>
+        /// 是否包含私有区段，需要进一步解析
+        /// </summary>
+        public bool hasPrivateSection { get; set; } = false;
 
         /// <summary>
         /// 类的属性、组合属性、聚合属性、关联属性
@@ -29,11 +45,6 @@ namespace CppParser.Models
         /// 类内的枚举类型
         /// </summary>
         public List<CppEnum> Enums { get; set; } = new List<CppEnum>();
-
-        /// <summary>
-        /// 基类列表
-        /// </summary>
-        ///public List<string> BaseClasses { get; set; } = new List<string>();
 
         /// <summary>
         /// 继承的父类列表
@@ -67,6 +78,7 @@ namespace CppParser.Models
         /// <summary>
         /// 是否为抽象类
         /// </summary>
+    
         public bool IsAbstract { get; set; } = false;
 
         /// <summary>

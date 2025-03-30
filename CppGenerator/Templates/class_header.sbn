@@ -15,6 +15,10 @@
 {{- $MULT_FIXED  = 2 -}}
 {{- $MULT_MANY   = 3 -}}
 
+{{- $HAS_PUBLICSECTION   = c.hasPublicSection -}}
+{{- $HAS_PROTECTEDSECTION = c.hasProtectedSection -}}
+{{- $HAS_PRIVATEDSECTION  = c.hasPrivateSection -}}
+
 {{- "\n" -}}
 {{- # === 依赖头文件 === -}}
 {{- if c.Dependencies != null && c.Dependencies.size > 0 }}
@@ -124,29 +128,7 @@ public:
     {{- end }}
     {{- end }}
 
-{{- # ============ 是否需要 protected: 区段（预扫描） ============ -}}
-{{- $has_protected = false -}}
-{{- if c.Methods != null }}
-  {{- for m in c.Methods }}
-    {{- $is_protected = (m.Visibility == $VIS_PROTECTED) -}}
-    {{- $is_ctor      = (m.Name == c.Name) -}}
-    {{- $is_dtor      = string.starts_with m.Name "~" -}}
-    {{- if $is_protected && (! $is_ctor) && (! $is_dtor) }}
-      {{- $has_protected = true -}}
-      {{- break -}}
-    {{- end -}}
-  {{- end }}
-{{- end }}
-{{- if ! $has_protected && c.Properties != null }}
-  {{- for p in c.Properties }}
-    {{- if p.Visibility == $VIS_PROTECTED }}
-      {{- $has_protected = true -}}
-      {{- break -}}
-    {{- end }}
-  {{- end }}
-{{- end }}
-
-{{- if $has_protected }}
+{{- if $HAS_PROTECTEDSECTION }}
 
 protected:
     {{- # —— protected 区 —— -}}
@@ -222,34 +204,8 @@ protected:
 
 {{- end }}
 
-{{- # ============ 是否需要 private: 区段（预扫描） ============ -}}
-{{- $has_private = false -}}
-{{- if c.Methods != null }}
-  {{- for m in c.Methods }}
-    {{- $is_private = (m.Visibility == $VIS_PRIVATE) -}}
-    {{- $is_ctor    = (m.Name == c.Name) -}}
-    {{- $is_dtor    = string.starts_with m.Name "~" -}}
-    {{- if $is_private && (! $is_ctor) && (! $is_dtor) }}
-      {{- $has_private = true -}}
-      {{- break -}}
-    {{- end -}}
-  {{- end }}
-{{- end }}
-{{- if ! $has_private && c.Properties != null }}
-  {{- for p in c.Properties }}
-    {{- if p.Visibility == $VIS_PRIVATE }}
-      {{- $has_private = true -}}
-      {{- break -}}
-    {{- end }}
-  {{- end }}
-{{- end }}
-{{- if ! $has_private }}
-  {{- if c.Associations != null && c.Associations.size > 0 }}{{ $has_private = true }}{{ end }}
-  {{- if c.Compositions != null && c.Compositions.size > 0 }}{{ $has_private = true }}{{ end }}
-  {{- if c.Aggregations != null && c.Aggregations.size > 0 }}{{ $has_private = true }}{{ end }}
-{{- end }}
 
-{{- if $has_private }}
+{{- if $HAS_PRIVATEDSECTION }}
 
 private:
     {{- # —— private 区 —— -}}
@@ -295,7 +251,7 @@ private:
     {{- # 成员变量（private） -}}
     {{- if c.Properties != null && c.Properties.size > 0 }}
     {{- for p in c.Properties }}
-    {{- if p.Visibility == $VIS_PRIVATED }}
+    {{- if p.Visibility == $VIS_PRIVATE }}
     {{- "\n" }}
     {{ if p.IsStatic == true }}static {{ end }}{{- p.Type }} {{ p.Name }}
         {{- if (p.IsStatic != true) && (p.DefaultValue != null) && (p.DefaultValue != "") }}
