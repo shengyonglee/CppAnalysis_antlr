@@ -116,8 +116,8 @@ class Program
                     p.IsMutable ? "mutable" : null
                 }.Where(s => s != null));
 
-                var typeText = !string.IsNullOrWhiteSpace(p.FullType) ? p.FullType : p.Type ?? "(unknown)";
-                Console.WriteLine($"{pad}    - [{p.Visibility}] {typeText} {p.Name}{(p.IsArray ? $"[{p.ArraySize}]" : "")}{(string.IsNullOrEmpty(p.DefaultValue) ? "" : $" = {p.DefaultValue}")}{(string.IsNullOrEmpty(flags) ? "" : $"  {{{flags}}}")}");
+                var typeText = !string.IsNullOrWhiteSpace(p.FullType) ? p.Type : p.Type ?? "(unknown)";
+                Console.WriteLine($"{pad}    - [{p.Visibility}] {typeText} {p.Name}{(p.IsArray ? $"[{p.ArraySize}]" : "")}{(string.IsNullOrEmpty(p.DefaultValue) ? "" : $"  {p.DefaultValue}")}{(string.IsNullOrEmpty(flags) ? "" : $"  {{{flags}}}")}");
             }
         }
 
@@ -137,7 +137,7 @@ class Program
                     ? ""
                     : string.Join(", ", m.Parameters.Select(par =>
                     {
-                        var pt = !string.IsNullOrWhiteSpace(par.FullType) ? par.FullType : par.Type ?? "(unknown)";
+                        var pt = !string.IsNullOrWhiteSpace(par.FullType) ? par.Type : par.Type ?? "(unknown)";
                         var rref = par.IsRValueReference ? "&&" : "";
                         var arr = par.IsArray ? $"[{par.ArraySize}]" : "";
                         return $"{pt}{(par.IsPointer ? " *" : "")}{(par.IsReference ? " &" : "")}{rref} {par.Name}{arr}";

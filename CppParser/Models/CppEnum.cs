@@ -9,7 +9,7 @@ namespace CppParser.Models
     public class CppEnum : CppElement
     {
         public List<string> Values { get; set; } = new List<string>();
-        public bool IsScoped { get; set; } // 是否为 enum class 或 enum struct
+        public bool IsScoped { get; set; } // 是否为 enum class 
         public string UnderlyingType { get; set; } // 基础类型，如 int, char 等
     }
 }

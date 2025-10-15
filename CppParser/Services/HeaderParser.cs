@@ -12,7 +12,7 @@ namespace CppParser.Services
         {
             public bool EnableSllThenLlFallback { get; set; } = true;
             public bool UseBailErrorStrategy { get; set; } = true;
-            public int? TokenThreshold { get; set; } = null;
+            public int? TokenThreshold { get; set; }
         }
 
         public Antlr4.Runtime.Tree.IParseTree Parse(string source, ParserOptions? options, out CPP14Parser parser)
@@ -25,8 +25,7 @@ namespace CppParser.Services
             var tokens = new CommonTokenStream(lexer);
             parser = new CPP14Parser(tokens);
 
-            if (options.UseBailErrorStrategy)
-                parser.ErrorHandler = new BailErrorStrategy();
+            if (options.UseBailErrorStrategy) parser.ErrorHandler = new BailErrorStrategy();
 
             if (options.TokenThreshold is int limit)
             {
@@ -57,8 +56,7 @@ namespace CppParser.Services
         {
             var tree = Parse(source, options, out _);
             var builder = new HeaderModelBuilder(fileName);
-            var result = builder.Visit(tree) as CppHeaderFile;
-            return result ?? new CppHeaderFile { FileName = fileName };
+            return (builder.Visit(tree) as CppHeaderFile) ?? new CppHeaderFile { FileName = fileName };
         }
     }
 }

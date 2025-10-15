@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime.Tree;
 using CppParser.Grammars.Generated;
@@ -7,17 +6,12 @@ using CppParser.Models;
 
 namespace CppParser.Services
 {
-    /// <summary>
-    /// 从 ParserContext 提取声明/类型信息并填充到模型。
-    /// 只做 AST 访问和 Token 文本拼接，不使用正则。
-    /// </summary>
+    /// 仅用 AST 填充模型
     public sealed class TypeBuilder
     {
-        // ====== 字段：类内（memberdeclaration 分支） ======
-
+        // ---------- 类内字段 ----------
         public IEnumerable<CppProperty> BuildFieldsFromMemberDeclaration(
-            CPP14Parser.MemberdeclarationContext md,
-            string visibility)
+            CPP14Parser.MemberdeclarationContext md, string visibility)
         {
             var ds = md.declSpecifierSeq();
             var baseType = ds != null ? JoinTokens(ds) : string.Empty;
@@ -30,72 +24,58 @@ namespace CppParser.Services
                 var d = m.declarator();
                 if (d == null) continue;
 
-                // —— 精确排除成员函数原型（外层无 pointerDeclarator，且 noptr 链上出现参数）——
-                if (IsDeclaratorMethodPrototype(d))
-                    continue;
+                // 排除成员函数原型
+                if (HeaderModelBuilder.IsDeclaratorMethodPrototype(d)) continue;
 
-                // 其余情况（普通变量、数组、函数指针/成员指针等）都是数据成员
-                var prop = new CppProperty { Visibility = visibility };
-                FillNamePointerRefArray(prop, d);
+                var p = new CppProperty { Visibility = visibility };
+                FillNamePtrRefArray(p, d);
 
-                prop.FullType = (baseType + " " + BuildPtrRefArraySuffix(d)).Trim();
-                prop.Type = baseType.Trim();
-                MarkTypeFlagsFromDeclSpecs(prop, baseType);
+                p.FullType = (baseType + " " + JoinTokens(d)).Trim();
+                p.Type = baseType.Trim();
+                MarkTypeFlagsFromDeclSpecs(p, baseType);
 
                 var ini = m.braceOrEqualInitializer();
-                if (ini != null)
-                    prop.DefaultValue = JoinTokens(ini);
+                if (ini != null) p.DefaultValue = JoinTokens(ini);
 
-                yield return prop;
+                yield return p;
             }
         }
 
-        // 与 HeaderModelBuilder 同逻辑的判定，放在 TypeBuilder 里复用
-        private static bool IsDeclaratorMethodPrototype(CPP14Parser.DeclaratorContext d)
-        {
-            if (d.pointerDeclarator() != null) return false;
-            var np = d.noPointerDeclarator();
-            while (np != null)
-            {
-                if (np.parametersAndQualifiers() != null)
-                    return true;
-                np = np.noPointerDeclarator();
-            }
-            return false;
-        }
-
-
-
+        // ---------- 顶层字段（保留） ----------
         public IEnumerable<CppProperty> BuildFieldsFromSimpleDeclaration(
-            CPP14Parser.SimpleDeclarationContext ctx,
-            string visibility)
+            CPP14Parser.SimpleDeclarationContext ctx, string visibility)
         {
             var declSpecs = ctx.declSpecifierSeq();
-            var baseTypeText = declSpecs != null ? JoinTokens(declSpecs) : string.Empty;
+            var baseType = declSpecs != null ? JoinTokens(declSpecs) : string.Empty;
 
             var list = ctx.initDeclaratorList();
             if (list == null) yield break;
 
-            foreach (var initDecl in list.initDeclarator())
+            foreach (var id in list.initDeclarator())
             {
-                var prop = BuildFieldFromInitDeclarator(baseTypeText, initDecl);
-                prop.Visibility = visibility;
-                yield return prop;
+                var p = BuildFieldFromInitDeclarator(baseType, id);
+                p.Visibility = visibility;
+                yield return p;
             }
         }
 
-        // ====== 方法 ======
-
+        // ---------- 方法 ----------
         public CppMethod BuildMethodFromFunctionDefinition(
-            CPP14Parser.FunctionDefinitionContext ctx,
-            string visibility)
+            CPP14Parser.FunctionDefinitionContext ctx, string visibility)
         {
             var m = new CppMethod { Visibility = visibility };
 
             var before = ctx.declSpecifierSeq() != null ? JoinTokens(ctx.declSpecifierSeq()) : string.Empty;
-            var declarator = ctx.declarator();
-            FillMethodSignatureFromDeclarator(m, before, declarator);
+            FillMethodSignatureFromDeclarator(m, before, ctx.declarator());
 
+            // override/final 在 functionDefinition 上（若语法提供）
+            var vss = ctx.virtualSpecifierSeq();
+            if (vss != null)
+            {
+                var vtxt = JoinTokens(vss);
+                if (vtxt.Contains("override")) m.IsOverride = true;
+                if (vtxt.Contains("final")) m.IsFinal = true;
+            }
             return m;
         }
 
@@ -103,72 +83,68 @@ namespace CppParser.Services
             CPP14Parser.MemberdeclarationContext ctx,
             string visibility)
         {
+            // 结果对象
             var m = new CppMethod { Visibility = visibility };
 
+            // 1) 返回类型等前置说明在 declSpecifierSeq 里
             var before = ctx.declSpecifierSeq() != null ? JoinTokens(ctx.declSpecifierSeq()) : string.Empty;
 
+            // 2) 在这一条 member-declaration 的 declarator 列表里，找出“成员函数原型”的那个 declarator
+            //    判定规则：由 HeaderModelBuilder.IsDeclaratorMethodPrototype(dec) 负责
             var declList = ctx.memberDeclaratorList();
             if (declList == null) return m;
 
-            // 精确选中：noPointerDeclarator() 具有 parametersAndQualifiers() 且最外层无 pointerDeclarator() 的那个
             var md = declList.memberDeclarator()
                              .FirstOrDefault(x =>
                              {
                                  var dec = x.declarator();
-                                 if (dec == null) return false;
-                                 return IsDeclaratorMethodPrototype(dec);
+                                 return dec != null && HeaderModelBuilder.IsDeclaratorMethodPrototype(dec);
                              });
 
+            // 没有匹配的 declarator，就返回一个只带可见性的“空”方法（调用方可按需忽略）
             if (md == null || md.declarator() == null) return m;
 
+            // 3) 用统一的签名填充逻辑：名称、参数、返回类型、const 等
             FillMethodSignatureFromDeclarator(m, before, md.declarator());
 
-            // 纯虚/默认/删除（若有）
-            var tailTxt = (JoinTokens(md.pureSpecifier()) + " " + JoinTokens(md.virtualSpecifierSeq())).Trim();
-            if (tailTxt.Contains("=0")) { m.IsPureVirtual = true; m.IsVirtual = true; }
-            if (tailTxt.Contains("=default")) m.IsDefaultImplementation = true;
-            if (tailTxt.Contains("=delete")) m.IsDeleted = true;
+            // 4) 处理尾部修饰：纯虚 / =default / =delete / override / final
+            //    这些在 grammar 里通常挂在 memberDeclarator 的尾部（若存在）
+            var tailText = (JoinTokens(md.pureSpecifier()) + " " + JoinTokens(md.virtualSpecifierSeq())).Trim();
+
+            if (!string.IsNullOrEmpty(tailText))
+            {
+                if (tailText.Contains("=0")) { m.IsPureVirtual = true; m.IsVirtual = true; }
+                if (tailText.Contains("=default")) m.IsDefaultImplementation = true;
+                if (tailText.Contains("=delete")) m.IsDeleted = true;
+                if (tailText.Contains("override")) m.IsOverride = true;
+                if (tailText.Contains("final")) m.IsFinal = true;
+            }
 
             return m;
         }
 
-        // ====== 内部：字段 ======
-
-        private CppProperty BuildFieldFromInitDeclarator(string baseType, CPP14Parser.InitDeclaratorContext initDecl)
+        // ---------- 内部：字段 ----------
+        private CppProperty BuildFieldFromInitDeclarator(string baseType, CPP14Parser.InitDeclaratorContext init)
         {
             var p = new CppProperty();
+            var decl = init.declarator();
+            if (decl != null) FillNamePtrRefArray(p, decl);
 
-            var decl = initDecl.declarator();
-            if (decl != null)
-                FillNamePointerRefArray(p, decl);
-
-            p.FullType = (baseType + " " + BuildPtrRefArraySuffix(decl)).Trim();
+            p.FullType = (baseType + " " + JoinTokens(decl)).Trim();
             p.Type = baseType.Trim();
-
             MarkTypeFlagsFromDeclSpecs(p, baseType);
 
-            if (initDecl.initializer() != null)
-                p.DefaultValue = JoinTokens(initDecl.initializer());
-
+            if (init.initializer() != null) p.DefaultValue = JoinTokens(init.initializer());
             return p;
         }
 
-        // ====== 内部：方法 ======
-
-        // TypeBuilder.cs 内部
-        private void FillMethodSignatureFromDeclarator(
-            CppMethod m,
-            string before,
-            CPP14Parser.DeclaratorContext declarator)
+        // ---------- 内部：方法 ----------
+        private void FillMethodSignatureFromDeclarator(CppMethod m, string before, CPP14Parser.DeclaratorContext declarator)
         {
-            // 1) 前缀修饰符（inline/static/explicit/friend/constexpr/virtual...）
             MarkMethodPrefixFlags(m, before);
 
-            // 2) 返回类型（把常见的函数前置修饰词从 decl-specifier-seq 中剔除后作为返回类型文本）
             var stripped = StripKeywords(before, new[]
-            {
-        "inline","static","explicit","friend","constexpr","virtual","extern","mutable","register"
-    }).Trim();
+            { "inline","static","explicit","friend","constexpr","virtual","extern","mutable","register" }).Trim();
 
             if (!string.IsNullOrEmpty(stripped))
             {
@@ -178,54 +154,32 @@ namespace CppParser.Services
                 if (stripped.Contains("const")) m.IsReturnConst = true;
             }
 
-            // 3) 函数名（从 declarator 的 idExpression 上取）
+            // 名称（常规路径失败则兜底找 IdExpression）
             var id = FindIdInDeclarator(declarator);
+            if (string.IsNullOrEmpty(id))
+            {
+                var idExpr = FindNode<CPP14Parser.IdExpressionContext>(declarator);
+                if (idExpr != null) id = JoinTokens(idExpr);
+            }
             m.Name = string.IsNullOrEmpty(id) ? "(anonymous)" : id;
 
-            // 4) 参数与尾部限定：沿 noPointerDeclarator 链任意一层寻找 parametersAndQualifiers()
-            CPP14Parser.ParametersAndQualifiersContext? pq = null;
-
-            // 先拿到一条可用的 noptr 链起点
-            var np = declarator.noPointerDeclarator()
-                     ?? declarator.pointerDeclarator()?.noPointerDeclarator();
-
-            while (np != null && pq == null)
-            {
-                if (np.parametersAndQualifiers() != null)
-                    pq = np.parametersAndQualifiers();
-                else
-                    np = np.noPointerDeclarator(); // 继续向里一层
-            }
-
+            // 参数/尾部 const：在 declarator 子树中找第一个 ParametersAndQualifiers；找不到但有 '(' 则空参
+            var pq = FindNode<CPP14Parser.ParametersAndQualifiersContext>(declarator);
             if (pq != null)
             {
-                // 参数列表
                 var clause = pq.parameterDeclarationClause();
                 var list = clause?.parameterDeclarationList();
                 if (list != null)
-                {
                     foreach (var pd in list.parameterDeclaration())
                         m.Parameters.Add(BuildParameter(pd));
-                }
 
-                // 尾部 cv 限定
-                if (pq.cvqualifierseq() != null &&
-                    JoinTokens(pq.cvqualifierseq()).Contains("const"))
-                {
+                if (pq.cvqualifierseq() != null && JoinTokens(pq.cvqualifierseq()).Contains("const"))
                     m.IsConst = true;
-                }
-
-                // ref-qualifier（如 & / &&）如需落模型，可在此读取：JoinTokens(pq.refqualifier())
             }
-
-            // 5) override / final：在 declarator.virtualSpecifierSeq()
-            //var vs = declarator.virtualSpecifierSeq();
-            //if (vs != null)
-            //{
-            //    var vtxt = JoinTokens(vs);
-            //    if (vtxt.Contains("override")) m.IsOverride = true;
-            //    if (vtxt.Contains("final")) m.IsFinal = true;
-            //}
+            else if (ContainsTerminal(declarator, "("))
+            {
+                // 空参，无需添加
+            }
         }
 
         private CppMethodParameter BuildParameter(CPP14Parser.ParameterDeclarationContext pd)
@@ -238,24 +192,19 @@ namespace CppParser.Services
             var pdecl = pd.declarator();
             if (pdecl != null)
             {
-                FillNamePointerRefArray(par, pdecl);
+                FillNamePtrRefArray(par, pdecl);
                 if (JoinTokens(pdecl).Contains("&&")) par.IsRValueReference = true;
             }
-            else
-            {
-                par.Name = string.Empty;
-            }
+            else { par.Name = string.Empty; }
 
-            par.FullType = (dsText + " " + BuildPtrRefArraySuffix(pdecl)).Trim();
+            par.FullType = (dsText + " " + JoinTokens(pdecl)).Trim();
             par.Type = dsText.Trim();
-
             MarkTypeFlagsFromDeclSpecs(par, dsText);
 
             return par;
         }
 
-        // ====== 共享：Declarator 解析 ======
-
+        // ---------- 共享 ----------
         private static string FindIdInDeclarator(CPP14Parser.DeclaratorContext declarator)
         {
             var id = declarator?.noPointerDeclarator()?.declaratorid()?.idExpression();
@@ -267,55 +216,56 @@ namespace CppParser.Services
             return string.Empty;
         }
 
-        private void FillNamePointerRefArray(CppProperty target, CPP14Parser.DeclaratorContext decl)
+        private void FillNamePtrRefArray(CppProperty target, CPP14Parser.DeclaratorContext decl)
         {
             var id = FindIdInDeclarator(decl);
+            if (string.IsNullOrEmpty(id))
+            {
+                var idExpr = FindNode<CPP14Parser.IdExpressionContext>(decl);
+                if (idExpr != null) id = JoinTokens(idExpr);
+            }
             target.Name = string.IsNullOrEmpty(id) ? "(anonymous)" : id;
 
-            var txt = JoinTokens(decl);
-            if (txt.Contains("*")) target.IsPointer = true;
-            if (txt.Contains("&")) target.IsReference = true;
+            var text = JoinTokens(decl);
+            if (text.Contains("*")) target.IsPointer = true;
+            if (text.Contains("&")) target.IsReference = true;
 
             var noptr = decl.noPointerDeclarator() ?? decl.pointerDeclarator()?.noPointerDeclarator();
-            var (hasArray, size) = FindArraySuffix(noptr);
-            if (hasArray)
-            {
-                target.IsArray = true;
-                target.ArraySize = size;
-            }
+            var (hasArr, size) = FindArraySuffix(noptr);
+            if (hasArr) { target.IsArray = true; target.ArraySize = size; }
         }
 
-        /// <summary>
-        /// 在 noptr-declarator 链上检查 [ constant-expression? ]。
-        /// </summary>
         private static (bool hasArray, string? size) FindArraySuffix(CPP14Parser.NoPointerDeclaratorContext? noptr)
         {
             var cur = noptr;
             while (cur != null)
             {
-                var leftBrackets = cur.LeftBracket();
-                if (leftBrackets != null )
+                try
                 {
-                    var ce = cur.constantExpression();
-                    var sizeText = ce != null ? JoinTokens(ce) : null;
-                    return (true, sizeText);
+                    var lb = cur.LeftBracket(); // ITerminalNode?（有些语法没有该方法）
+                    if (lb != null)
+                    {
+                        var ce = cur.constantExpression();
+                        var sizeText = ce != null ? JoinTokens(ce) : null;
+                        return (true, sizeText);
+                    }
+                }
+                catch
+                {
+                    if (ContainsTerminal(cur, "[")) // 兜底：查找 '[' 终结符
+                    {
+                        var ce = cur.constantExpression();
+                        var sizeText = ce != null ? JoinTokens(ce) : null;
+                        return (true, sizeText);
+                    }
                 }
                 cur = cur.noPointerDeclarator();
             }
             return (false, null);
         }
 
-        private static string BuildPtrRefArraySuffix(CPP14Parser.DeclaratorContext? decl)
+        private static void MarkTypeFlagsFromDeclSpecs(CppProperty p, string t)
         {
-            if (decl == null) return string.Empty;
-            return JoinTokens(decl);
-        }
-
-        // ====== 标志位 ======
-
-        private static void MarkTypeFlagsFromDeclSpecs(CppProperty p, string declSpecText)
-        {
-            var t = declSpecText;
             if (t.Contains("const")) p.IsConst = true;
             if (t.Contains("volatile")) p.IsVolatile = true;
             if (t.Contains("mutable")) p.IsMutable = true;
@@ -339,12 +289,29 @@ namespace CppParser.Services
         private static string StripKeywords(string text, IEnumerable<string> keywords)
         {
             var r = " " + (text ?? string.Empty) + " ";
-            foreach (var k in keywords)
-                r = r.Replace(" " + k + " ", " ");
+            foreach (var k in keywords) r = r.Replace(" " + k + " ", " ");
             return r.Trim();
         }
 
-        // ====== Token 拼接 ======
+        // ---- 通用树工具/Token 拼接 ----
+        public static TNode? FindNode<TNode>(IParseTree root) where TNode : class, IParseTree
+        {
+            if (root is TNode tn) return tn;
+            for (int i = 0; i < root.ChildCount; i++)
+            {
+                var r = FindNode<TNode>(root.GetChild(i));
+                if (r != null) return r;
+            }
+            return null;
+        }
+
+        public static bool ContainsTerminal(IParseTree root, string tokenText)
+        {
+            if (root.ChildCount == 0) return root.GetText() == tokenText;
+            for (int i = 0; i < root.ChildCount; i++)
+                if (ContainsTerminal(root.GetChild(i), tokenText)) return true;
+            return false;
+        }
 
         public static string JoinTokens(IParseTree? node)
         {
