@@ -7,5 +7,6 @@ private:
 	int m_id;
 	std::string m_name; // 成员变量
 	int b = 1;
+	vector<int> vec;
 };
 

@@ -8,8 +8,19 @@ namespace CppParser.Models
 {
     public class CppEnum : CppElement
     {
+        /// <summary>
+        /// 枚举值列表
+        /// </summary>
         public List<string> Values { get; set; } = new List<string>();
-        public bool IsScoped { get; set; } // 是否为 enum class 
-        public string UnderlyingType { get; set; } // 基础类型，如 int, char 等
+
+        /// <summary>
+        /// 是否为 scoped enum（enum class）
+        /// </summary>
+        public bool IsScoped { get; set; }
+
+        /// <summary>
+        /// 枚举的底层类型（如有指定int）
+        /// </summary>
+        public string UnderlyingType { get; set; } 
     }
 }

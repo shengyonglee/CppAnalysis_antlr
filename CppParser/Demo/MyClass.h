@@ -8,12 +8,18 @@ enum Color {
     GREEN,
     BLUE
 };
+typedef enum
+{
+	TYPE_A,
+	TYPE_B,
+	TYPE_C
+} MyType;
 
 class MyBaseClass
 {
 public:
     int b = 1;
-
+	MyType type;
 	enum status { SUCCESS, FAILURE, PENDING };
 	int* x;
 	int* c;

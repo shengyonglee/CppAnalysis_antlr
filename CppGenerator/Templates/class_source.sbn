@@ -1,0 +1,18 @@
+﻿/* @file {{ NAME_LOWER }}.cpp */
+#include "{{ c.Name }}.h"
+
+{{ c.Name }}::{{ c.Name }}()
+{
+}
+
+{{ c.Name }}::~{{ c.Name }}()
+{
+}
+
+{{ if c.Methods != null && c.Methods.size > 0 }}
+{{ for m in c.Methods }}
+{{ m.ReturnType }} {{ c.Name }}::{{ m.Name }}({{ if m.Parameters != null && m.Parameters.size > 0 }}{{ for p in m.Parameters }}{{ if !for.first }}, {{ end }}{{ p.Type }} {{ p.Name }}{{ end }}{{ end }})
+{
+}
+{{ end }}
+{{ end }}

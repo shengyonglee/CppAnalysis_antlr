@@ -8,6 +8,9 @@ namespace CppParser.Models
 {
     public class CppMethodParameter : CppProperty
     {
+        /// <summary>
+        /// 方法参数是否为右值引用
+        /// </summary>
         public bool IsRValueReference { get; set; }
     }
 }

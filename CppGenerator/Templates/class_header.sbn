@@ -1,0 +1,87 @@
+﻿/* @file {{ NAME_LOWER }}.h */
+#ifndef {{ HEADER_GUARD }}
+#define {{ HEADER_GUARD }}
+
+#include <string>
+#include <vector>
+
+{{- ## include头文件 ## }}
+{{ if c.Dependencies != null && c.Dependencies.size > 0 }}
+{{- for d in c.Dependencies }}
+#include "{{ d.TargetClass }}";
+{{- end }}
+{{- end }}
+
+{{- if c.Associations != null && c.Associations.size > 0 }}
+{{- for a in c.Associations }}
+#include "{{ a.TargetClass }}";
+{{- end }}
+{{- end }} 
+
+{{- ## 前置声明 ## }}
+{{ if c.Dependencies != null && c.Dependencies.size > 0 }}
+{{- for d in c.Dependencies }}
+class {{ d.TargetClass }};
+{{- end }}
+{{- end }}
+
+{{- if c.Associations != null && c.Associations.size > 0 }}
+{{- for a in c.Associations }}
+class {{ a.TargetClass }};
+{{- end }}
+{{- end }} 
+
+{{- ## class声明 ## }}
+class {{ c.Name }} 
+{
+public:
+    {{ c.Name }}();
+    virtual ~{{ c.Name }}();
+{{ if c.Methods != null && c.Methods.size > 0 }}
+{{- for m in c.Methods }}    {{ m.ReturnType }} {{ m.Name }}({{ if m.Parameters != null && m.Parameters.size > 0 }}{{ for p in m.Parameters }}{{ if !for.first }}, {{ end }}{{ p.Type }} {{ p.Name }}{{ end }}{{ end }});
+{{- end }}
+{{ end }}
+
+protected:
+
+private:
+{{ if c.Properties != null }}
+{{- for p in c.Properties }}    {{ p.Type }} m_{{ p.Name }};
+{{- end }}
+{{ end }}
+
+{{ if c.Associations != null && c.Associations.size > 0 }}
+{{- for a in c.Associations }}
+{{ if a != null && a.TargetClass != null }}
+{{ if a.Multiplicity == "ToOne" }}    {{ a.TargetClass }}* m_p{{ a.RoleName }};
+{{ else if a.Multiplicity == "ToFixed" }}    {{ a.TargetClass }} m_{{ a.RoleName }}[3];
+{{ else if a.Multiplicity == "ToMany" }}    std::vector<{{ a.TargetClass }}*> m_{{ a.RoleName }};
+{{ end }}
+{{ end }}
+{{- end }}
+{{ end }}
+
+{{ if c.Compositions != null && c.Compositions.size > 0 }}
+{{- for x in c.Compositions }}
+{{ if x != null && x.TargetClass != null }}
+{{ if x.Multiplicity == "ToOne" }}    {{ x.TargetClass }} m_{{ x.RoleName }};
+{{ else if x.Multiplicity == "ToFixed" }}    {{ x.TargetClass }} m_{{ x.RoleName }}[3];
+{{ else if x.Multiplicity == "ToMany" }}    std::vector<{{ x.TargetClass }}> m_{{ x.RoleName }};
+{{ end }}
+{{ end }}
+{{- end }}
+{{ end }}
+
+{{ if c.Aggregations != null && c.Aggregations.size > 0 }}
+{{- for x in c.Aggregations }}
+{{ if x != null && x.TargetClass != null }}
+{{ if x.Multiplicity == "ToOne" }}    {{ x.TargetClass }} m_{{ x.RoleName }};
+{{ else if x.Multiplicity == "ToFixed" }}    {{ x.TargetClass }} m_{{ x.RoleName }}[3];
+{{ else if x.Multiplicity == "ToMany" }}    std::vector<{{ x.TargetClass }}> m_{{ x.RoleName }};
+{{ end }}
+{{ end }}
+{{- end }}
+{{ end }}
+};
+
+#endif

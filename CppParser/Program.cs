@@ -10,7 +10,7 @@ class Program
 {
     static void Main()
     {
-        string filePath = "D:\\work\\learn\\tools\\vs\\CppAnalysis_antlr\\CppParser\\Demo\\MyClass2.h";
+        string filePath = "D:\\work\\learn\\tools\\vs\\CppAnalysis_antlr\\CppParser\\Demo\\MyClass.h";
 
         if (!File.Exists(filePath))
         {
@@ -76,10 +76,10 @@ class Program
         Console.WriteLine($"{pad}- {c.Stereotype} {c.Name}");
         Console.ResetColor();
 
-        if (c.BaseClasses?.Any() == true)
-        {
-            Console.WriteLine($"{pad}  Bases: {string.Join(", ", c.BaseClasses)}");
-        }
+        //if (c.BaseClasses?.Any() == true)
+        //{
+        //    Console.WriteLine($"{pad}  Bases: {string.Join(", ", c.BaseClasses)}");
+        //}
 
         // 类内枚举
         if (c.Enums?.Any() == true)
@@ -163,7 +163,6 @@ class Program
             }
         }
 
-        // 如果后续你扩展了“类内嵌套类集合”，这里可递归打印
-        // foreach (var inner in c.Classes) { PrintClass(inner, indent + 1); }
+
     }
 }

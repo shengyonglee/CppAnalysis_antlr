@@ -1,0 +1,36 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CppParser.Enums
+{
+    public enum EnumClassType
+    {
+        /// <summary>
+        /// 无类型
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// 类
+        /// </summary>
+        Class,
+
+        /// <summary>
+        /// 结构体
+        /// </summary>
+        Struct,
+
+        /// <summary>
+        /// 接口
+        /// </summary>
+        Interface,
+
+        /// <summary>
+        /// 抽象类
+        /// </summary>
+        AbstractClass
+    }
+}
