@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime.Tree;
+using CppParser.Enums;
 using CppParser.Grammars.Generated;
 using CppParser.Models;
 
@@ -11,7 +12,7 @@ namespace CppParser.Services
     {
         // ---------- 类内字段 ----------
         public IEnumerable<CppProperty> BuildFieldsFromMemberDeclaration(
-            CPP14Parser.MemberdeclarationContext md, string visibility)
+            CPP14Parser.MemberdeclarationContext md, EnumVisibility visibility)
         {
             var ds = md.declSpecifierSeq();
             var baseType = ds != null ? JoinTokens(ds) : string.Empty;
@@ -24,7 +25,7 @@ namespace CppParser.Services
                 var d = m.declarator();
                 if (d == null) continue;
 
-                // 排除成员函数原型
+                // 排除成员函数原型（保持原逻辑）
                 if (HeaderModelBuilder.IsDeclaratorMethodPrototype(d)) continue;
 
                 var p = new CppProperty { Visibility = visibility };
@@ -43,7 +44,7 @@ namespace CppParser.Services
 
         // ---------- 顶层字段（保留） ----------
         public IEnumerable<CppProperty> BuildFieldsFromSimpleDeclaration(
-            CPP14Parser.SimpleDeclarationContext ctx, string visibility)
+            CPP14Parser.SimpleDeclarationContext ctx, EnumVisibility visibility)
         {
             var declSpecs = ctx.declSpecifierSeq();
             var baseType = declSpecs != null ? JoinTokens(declSpecs) : string.Empty;
@@ -61,7 +62,7 @@ namespace CppParser.Services
 
         // ---------- 方法 ----------
         public CppMethod BuildMethodFromFunctionDefinition(
-            CPP14Parser.FunctionDefinitionContext ctx, string visibility)
+            CPP14Parser.FunctionDefinitionContext ctx, EnumVisibility visibility)
         {
             var m = new CppMethod { Visibility = visibility };
 
@@ -81,16 +82,12 @@ namespace CppParser.Services
 
         public CppMethod BuildMethodFromMemberDeclarationFunction(
             CPP14Parser.MemberdeclarationContext ctx,
-            string visibility)
+            EnumVisibility visibility)
         {
-            // 结果对象
             var m = new CppMethod { Visibility = visibility };
 
-            // 1) 返回类型等前置说明在 declSpecifierSeq 里
             var before = ctx.declSpecifierSeq() != null ? JoinTokens(ctx.declSpecifierSeq()) : string.Empty;
 
-            // 2) 在这一条 member-declaration 的 declarator 列表里，找出“成员函数原型”的那个 declarator
-            //    判定规则：由 HeaderModelBuilder.IsDeclaratorMethodPrototype(dec) 负责
             var declList = ctx.memberDeclaratorList();
             if (declList == null) return m;
 
@@ -101,16 +98,11 @@ namespace CppParser.Services
                                  return dec != null && HeaderModelBuilder.IsDeclaratorMethodPrototype(dec);
                              });
 
-            // 没有匹配的 declarator，就返回一个只带可见性的“空”方法（调用方可按需忽略）
             if (md == null || md.declarator() == null) return m;
 
-            // 3) 用统一的签名填充逻辑：名称、参数、返回类型、const 等
             FillMethodSignatureFromDeclarator(m, before, md.declarator());
 
-            // 4) 处理尾部修饰：纯虚 / =default / =delete / override / final
-            //    这些在 grammar 里通常挂在 memberDeclarator 的尾部（若存在）
             var tailText = (JoinTokens(md.pureSpecifier()) + " " + JoinTokens(md.virtualSpecifierSeq())).Trim();
-
             if (!string.IsNullOrEmpty(tailText))
             {
                 if (tailText.Contains("=0")) { m.IsPureVirtual = true; m.IsVirtual = true; }
@@ -119,7 +111,6 @@ namespace CppParser.Services
                 if (tailText.Contains("override")) m.IsOverride = true;
                 if (tailText.Contains("final")) m.IsFinal = true;
             }
-
             return m;
         }
 
@@ -163,7 +154,7 @@ namespace CppParser.Services
             }
             m.Name = string.IsNullOrEmpty(id) ? "(anonymous)" : id;
 
-            // 参数/尾部 const：在 declarator 子树中找第一个 ParametersAndQualifiers；找不到但有 '(' 则空参
+            // 参数/尾部 const
             var pq = FindNode<CPP14Parser.ParametersAndQualifiersContext>(declarator);
             if (pq != null)
             {
@@ -178,7 +169,7 @@ namespace CppParser.Services
             }
             else if (ContainsTerminal(declarator, "("))
             {
-                // 空参，无需添加
+                // 空参
             }
         }
 

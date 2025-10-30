@@ -2,6 +2,7 @@
 using System.Linq;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
+using CppParser.Enums;
 using CppParser.Grammars.Generated;
 using CppParser.Models;
 
@@ -42,29 +43,50 @@ namespace CppParser.Services
         public override object? VisitClassSpecifier([NotNull] CPP14Parser.ClassSpecifierContext ctx)
         {
             var head = ctx.classHead();
+
+            // 1) 映射 classKey 文本到枚举
+            var key = head.classKey().GetText(); // "class" | "struct" | "union"
+            var stereotype = key switch
+            {
+                "class" => EnumClassType.Class,
+                "struct" => EnumClassType.Struct,
+                _ => EnumClassType.Class
+            };
+
             var cls = new CppClass
             {
-                Stereotype = head.classKey().GetText(),
+                Stereotype = stereotype,
                 Name = BuildQname(ResolveClassName(head))
             };
 
-            // 继承
+            // 2) 继承  
             var bc = head.baseClause()?.baseSpecifierList();
             if (bc != null)
             {
                 foreach (var b in bc.baseSpecifier())
                 {
                     var bt = b.baseTypeSpecifier();
-                    if (bt != null)
+                    if (bt == null) continue;
+
+                    // 原先：var name = TypeBuilder.JoinTokens(bt); if (!string.IsNullOrWhiteSpace(name)) cls.BaseClasses.Add(name);
+
+                    var name = TypeBuilder.JoinTokens(bt).Trim();
+                    if (string.IsNullOrWhiteSpace(name)) continue;
+
+                    // 新：落到 Generalizations，保持原有“只记录名称”的逻辑，不引入新的语义字段
+                    var gen = new CppGeneralization
                     {
-                        var name = TypeBuilder.JoinTokens(bt);
-                        if (!string.IsNullOrWhiteSpace(name)) cls.BaseClasses.Add(name);
-                    }
+                        // 模型里最关键的是目标类型；其余字段（Multiplicity/RoleName等）此处不设置，保持原逻辑不变
+                        TargetClass = name
+                    };
+                    cls.Generalizations.Add(gen);
                 }
             }
 
+
             _header.Classes.Add(cls);
 
+            // 3) 进入类体：根据类键值设定默认可见性
             _access.EnterClass(cls.Stereotype);
             _class.Push(cls);
 
@@ -73,6 +95,8 @@ namespace CppParser.Services
 
             _class.Pop();
             _access.LeaveClass();
+
+            // 类成员收集完成后，可选择在外部调用 AnalyzeAsInterface()，这里保持原逻辑不动
             return cls;
         }
 
@@ -140,7 +164,7 @@ namespace CppParser.Services
             }
         }
 
-        // —— 关键：成员函数原型判定（外层无 pointerDeclarator 且 declarator 子树出现 '('）——
+        // —— 成员函数原型判定（保持原有启发式/不改逻辑）——
         private static bool IsMethodPrototype(CPP14Parser.MemberdeclarationContext md)
         {
             var list = md.memberDeclaratorList();
@@ -159,18 +183,12 @@ namespace CppParser.Services
         {
             var txt = TypeBuilder.JoinTokens(d);
             var idx = txt.IndexOf('(');
-            if (idx < 0) return false;          // 没有参数括号，不是函数
+            if (idx < 0) return false;
 
-            var head = txt.Substring(0, idx);   // 第一个 '(' 之前
-            head = head.Trim();
-
-            // 典型函数指针/成员函数指针的特征
-            if (head.Contains("*")) return false;     // 包含 '*'（如 (*fp) / Class::(*pmf)）
-            if (head.Contains("::)")) return false;   // 极端情形
-            if (head.EndsWith(")")) return false;     // 形如 "( *name" 未被空格折叠的情况
-
-            // 注意：这里不看 AST 的 pointerDeclarator/parametersAndQualifiers，
-            // 仅用简单的 pre-'(' 片段判断，适配你当前生成器结构。
+            var head = txt.Substring(0, idx).Trim();
+            if (head.Contains("*")) return false;
+            if (head.Contains("::)")) return false;
+            if (head.EndsWith(")")) return false;
             return true;
         }
 

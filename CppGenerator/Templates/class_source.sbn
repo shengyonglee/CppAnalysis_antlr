@@ -9,10 +9,21 @@
 {
 }
 
-{{ if c.Methods != null && c.Methods.size > 0 }}
-{{ for m in c.Methods }}
+{{- "\n" -}}
+{{- if c.Methods != null && c.Methods.size > 0 }}
+{{- for m in c.Methods }}
+{{- "\n" -}}
 {{ m.ReturnType }} {{ c.Name }}::{{ m.Name }}({{ if m.Parameters != null && m.Parameters.size > 0 }}{{ for p in m.Parameters }}{{ if !for.first }}, {{ end }}{{ p.Type }} {{ p.Name }}{{ end }}{{ end }})
 {
 }
 {{ end }}
 {{ end }}
+
+{{- # 静态数据成员定义（类外） -}}
+{{- if c.Properties != null && c.Properties.size > 0 }}
+  {{- for p in c.Properties }}
+    {{- if p.IsStatic == true }}
+{{ p.Type }} {{ c.Name }}::{{ p.Name }}{{ if (p.DefaultValue != null) && (p.DefaultValue != "") }} = {{ p.DefaultValue }}{{ end }};
+    {{- end }}
+  {{- end }}
+{{- end }}

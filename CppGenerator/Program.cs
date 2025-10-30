@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Scriban;
 using CppParser.Models;
-using Scriban.Runtime; // 用你提供的模型类
+using Scriban.Runtime; 
 using CppParser.Enums;
 namespace CppGenerator
 {
@@ -20,9 +20,13 @@ namespace CppGenerator
                 Stereotype = EnumClassType.Class,
                 Properties = new List<CppProperty>
                 {
-                    new CppProperty { Name = "name", Type = "std::string", Visibility = EnumVisibility.Public },
-                    new CppProperty { Name = "age",  Type = "int",          Visibility = EnumVisibility.Private }
+                    new CppProperty { Name = "namea", Type = "std::string", Visibility = EnumVisibility.Public ,DefaultValue = "\"aaa\""},
+                    new CppProperty { Name = "agea",  Type = "int",          Visibility = EnumVisibility.Private ,DefaultValue = "10"},
+                    new CppProperty { Name = "a",  Type = "int", IsStatic = true,  Visibility = EnumVisibility.Public,DefaultValue = "10"},
+                    new CppProperty { Name = "b",  Type = "int",  Visibility = EnumVisibility.Protected ,DefaultValue = "10" }
+
                 },
+
                 Methods = new List<CppMethod>
                 {
                     new CppMethod
@@ -36,7 +40,17 @@ namespace CppGenerator
                     {
                         Name = "setName",
                         ReturnType = "void",
-                        Visibility = EnumVisibility.Public,
+                        Visibility = EnumVisibility.Protected,
+                        Parameters = new List<CppMethodParameter>
+                        {
+                            new CppMethodParameter { Name = "value", Type = "const std::string&" }
+                        }
+                    },
+                    new CppMethod
+                    {
+                        Name = "setName1",
+                        ReturnType = "string",
+                        Visibility = EnumVisibility.Private,
                         Parameters = new List<CppMethodParameter>
                         {
                             new CppMethodParameter { Name = "value", Type = "const std::string&" }
@@ -49,14 +63,33 @@ namespace CppGenerator
             {
                 TargetClass = "Company1",
                 RoleName = "employer1",
-                Multiplicity = EnumCppMultiplicity.ToOne
+                Multiplicity = EnumCppMultiplicity.ToOne,
+                Visibility = EnumVisibility.Public
             });
+
 
             cppClass.Associations.Add(new CppAssociation
             {
                 TargetClass = "Company2",
                 RoleName = "employer2",
-                Multiplicity = EnumCppMultiplicity.ToOne
+                Multiplicity = EnumCppMultiplicity.ToMany,
+                Visibility = EnumVisibility.Protected
+            });
+
+            cppClass.Associations.Add(new CppAssociation
+            {
+                TargetClass = "Company3",
+                RoleName = "employer3",
+                Multiplicity = EnumCppMultiplicity.ToOne,
+                Visibility = EnumVisibility.Protected
+            });
+
+            cppClass.Associations.Add(new CppAssociation
+            {
+                TargetClass = "Company4",
+                RoleName = "employer4",
+                Multiplicity = EnumCppMultiplicity.ToOne,
+                Visibility = EnumVisibility.Private
             });
 
             cppClass.Dependencies.Add(new CppDependency
@@ -87,13 +120,7 @@ namespace CppGenerator
             globals.SetValue("c", cppClass, true);
             globals.SetValue("class", cppClass, true);
 
-            // 预计算，模板不再调用 string.upper/downcase
-            globals.SetValue("NAME_UPPER", cppClass.Name.ToUpperInvariant(), true);
-            globals.SetValue("NAME_LOWER", cppClass.Name.ToLowerInvariant(), true);
-            globals.SetValue("HEADER_GUARD", $"_{cppClass.Name.ToUpperInvariant()}_H_", true);
-
             scribanContext.PushGlobal(globals);
-
 
 
             // 渲染（注意这里传的是 scribanContext，而不是匿名对象/字典）
