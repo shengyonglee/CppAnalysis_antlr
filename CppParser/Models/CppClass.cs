@@ -17,21 +17,6 @@ namespace CppParser.Models
         public EnumClassType Stereotype { get; set; } = EnumClassType.Class;
 
         /// <summary>
-        /// 是否包含公有区段，一定有，构造函数时默认包含
-        /// </summary>
-        public bool hasPublicSection { get; set; } = true;
-
-        /// <summary>
-        /// 是否包含保护区段，需要进一步解析
-        /// </summary>
-        public bool hasProtectedSection { get; set; } = false;
-
-        /// <summary>
-        /// 是否包含私有区段，需要进一步解析
-        /// </summary>
-        public bool hasPrivateSection { get; set; } = false;
-
-        /// <summary>
         /// 类的属性、组合属性、聚合属性、关联属性
         /// </summary>
         public List<CppProperty> Properties { get; set; } = new List<CppProperty>();

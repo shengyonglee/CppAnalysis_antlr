@@ -67,7 +67,6 @@ namespace CppParser.Models
         /// <summary>
         /// 是否为指针类型
         /// </summary>
-        []
         public bool IsPointer { get; set; }
 
         /// <summary>

@@ -1,0 +1,21 @@
+﻿#ifndef _{{ e.Name | string.upcase }}_H_
+#define _{{ e.Name | string.upcase }}_H_
+
+{{- "\n" -}}
+{{- if e.IsScoped }}
+enum class {{ e.Name }}{{ if e.UnderlyingType }} : {{ e.UnderlyingType }}{{ end }}
+{
+  {{- for v in e.Values }}
+  {{ v }}{{ if !for.last }},{{ end }}
+  {{- end }}
+};
+{{- else }}
+enum {{ e.Name }}{{ if e.UnderlyingType }} : {{ e.UnderlyingType }}{{ end }}
+{
+  {{- for v in e.Values }}
+  {{ v }}{{ if !for.last }},{{ end }}
+  {{- end }}
+};
+{{- end }}
+
+#endif

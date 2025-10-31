@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using CppParser.Enums;
 using CppParser.Models;
 using CppGenerator.Services;
@@ -10,47 +11,102 @@ namespace CppGenerator
     {
         static void Main()
         {
-            // 1) 依赖组装（后端建议用 DI 注册）
-            var pre = new DefaultModelPreprocessor();
-            var tpl = new FileTemplateProvider(
-                headerTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\class_header.sbn",
-                sourceTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\class_source.sbn");
-            var renderer = new ScribanRenderer(tpl);
-            var generator = new DefaultCodeGenerator(pre, renderer);
+            // 0) 依赖组装（模板路径按你的工程实际位置调整）
+            var pre = new CppModelPreprocessor();
+            var tpl = new CppTemplateProvider(
+                classHeaderTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\class_header.sbn",
+                classSourceTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\class_source.sbn",
+                enumHeaderTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\enum_header.sbn",
+                interfaceHeaderTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\interface_header.sbn");
+            var renderer = new CppCodeRenderer(tpl);
+            var generator = new CppCodeGenerator(pre, renderer);
 
-            // 2) 模拟后端传入的 CppClass
+            string outputDir = @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Output";
+            Directory.CreateDirectory(outputDir);
+
+            // 1) 生成“类”的示例
+            GenerateClassSample(outputDir, generator);
+
+            // 2) 生成“枚举”的示例
+            GenerateEnumSample(outputDir, generator);
+
+            // 3) 生成“接口”的示例
+            GenerateInterfaceSample(outputDir, generator);
+
+            Console.WriteLine("Done.");
+        }
+
+        /// <summary>演示：把 UML 中一个“类”生成 .h/.cpp 字符串并写到 Output。</summary>
+        private static void GenerateClassSample(string outputDir, ICppCodeGenerator generator)
+        {
             var cppClass = new CppClass
             {
                 Name = "Person",
                 Stereotype = EnumClassType.Class,
                 Properties = new List<CppProperty>
                 {
-                    new CppProperty { Name = "name", Type = "std::string", Visibility = EnumVisibility.Public, DefaultValue = "\"Tom\"" },
-                    new CppProperty { Name = "age",  Type = "int",          Visibility = EnumVisibility.Private }
+                    new CppProperty { Name = "name1", Type = "std::string", Visibility = EnumVisibility.Public,  DefaultValue = "\"Tom\"" },
+                    new CppProperty { Name = "age",  Type = "int",          Visibility = EnumVisibility.Private },
+                    new CppProperty { Name = "name2", Type = "std::string", Visibility = EnumVisibility.Private,  DefaultValue = "\"Tom1\"" },
                 },
                 Methods = new List<CppMethod>
                 {
-                    new CppMethod { Name = "getName", ReturnType = "std::string", Visibility = EnumVisibility.Public },
+                    new CppMethod { Name = "getName", ReturnType = "std::string", Visibility = EnumVisibility.Public, IsConst = true },
                     new CppMethod {
                         Name = "setName", ReturnType = "void", Visibility = EnumVisibility.Public,
-                        Parameters = new List<CppMethodParameter> { new() { Name = "v", Type = "const std::string&" } }
+                        Parameters = new List<CppMethodParameter> {
+                            new() { Name = "v", Type = "const std::string&" }
+                        }
                     }
                 }
             };
 
-            // 3) 生成（仅字符串）
-            var result = generator.Generate(cppClass);
+            var result = generator.GenerateClass(cppClass); // 只返回字符串
 
-            // 4) 输出（真实后端直接返回字符串即可）
-
-            string outputDir = "D:\\work\\learn\\tools\\vs\\CppAnalysis_antlr\\CppGenerator\\Output\\";
-            Directory.CreateDirectory(outputDir);
             File.WriteAllText(Path.Combine(outputDir, $"{cppClass.Name}.h"), result.HeaderCode);
             File.WriteAllText(Path.Combine(outputDir, $"{cppClass.Name}.cpp"), result.SourceCode);
 
-            Console.WriteLine("Generated:");
-            Console.WriteLine($" - {outputDir}/{cppClass.Name}.h");
-            Console.WriteLine($" - {outputDir}/{cppClass.Name}.cpp");
+            Console.WriteLine($"[Class]  Generated: {Path.Combine(outputDir, $"{cppClass.Name}.h")}");
+            Console.WriteLine($"[Class]  Generated: {Path.Combine(outputDir, $"{cppClass.Name}.cpp")}");
+        }
+
+        /// <summary>演示：把 UML 中一个“枚举”生成 .h 字符串并写到 Output。</summary>
+        private static void GenerateEnumSample(string outputDir, ICppCodeGenerator generator)
+        {
+            var cppEnum = new CppEnum
+            {
+                Name = "Color",
+                IsScoped = true, // enum class
+                // UnderlyingType = "uint8_t",  // 如需要可指定底层类型
+                Values = new List<string> { "Red", "Green", "Blue" }
+            };
+
+            string enumHeader = generator.GenerateEnum(cppEnum);
+
+            File.WriteAllText(Path.Combine(outputDir, $"{cppEnum.Name}.h"), enumHeader);
+            Console.WriteLine($"[Enum]   Generated: {Path.Combine(outputDir, $"{cppEnum.Name}.h")}");
+        }
+
+        /// <summary>演示：把 UML 中一个“接口(Interface)”生成 .h 字符串并写到 Output。</summary>
+        private static void GenerateInterfaceSample(string outputDir, ICppCodeGenerator generator)
+        {
+            // 接口用 CppClass 承载，但 Stereotype=Interface，且只包含纯虚函数
+            var iface = new CppClass
+            {
+                Name = "IShape",
+                Stereotype = EnumClassType.Interface,
+                Methods = new List<CppMethod>
+                {
+                    new CppMethod { Name = "Area",    ReturnType = "double", Visibility = EnumVisibility.Public, IsConst = true, IsVirtual = true, IsPureVirtual = true },
+                    new CppMethod { Name = "Perimeter", ReturnType = "double", Visibility = EnumVisibility.Public, IsConst = true, IsVirtual = true, IsPureVirtual = true }
+                }
+                // 接口不应含有数据成员；若模型里带了属性，预处理会尽量温和处理/模板会忽略
+            };
+
+            string ifaceHeader = generator.GenerateInterface(iface);
+
+            File.WriteAllText(Path.Combine(outputDir, $"{iface.Name}.h"), ifaceHeader);
+            Console.WriteLine($"[Iface]  Generated: {Path.Combine(outputDir, $"{iface.Name}.h")}");
         }
     }
 }

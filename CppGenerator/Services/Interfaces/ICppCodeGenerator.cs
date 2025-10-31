@@ -9,8 +9,10 @@ using CppParser.Models;
 namespace CppGenerator.Services
 {
     /// <summary>门面：预处理 → 渲染；仅返回字符串。</summary>
-    public interface ICodeGenerator
+    public interface ICppCodeGenerator
     {
-        RenderResult Generate(CppClass model);
+        RenderResult GenerateClass(CppClass model);
+        string GenerateEnum(CppEnum model);
+        string GenerateInterface(CppClass model);
     }
 }

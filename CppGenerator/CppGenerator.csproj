@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <Folder Include="Output\" />
-    <Folder Include="Templates\" />
   </ItemGroup>
 
   <ItemGroup>

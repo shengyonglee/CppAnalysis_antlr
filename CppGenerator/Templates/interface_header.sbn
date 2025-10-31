@@ -72,7 +72,7 @@ public:
                 {{ p.Type }} {{ p.Name }}
             {{- end -}}
         {{- end -}}
-    ){{ if m.IsConst == true }} const{{ end }};
+    ){{ if m.IsConst == true }} const{{ end }} = 0;  
     {{- end }}
     {{- end }}
     {{- end }}
@@ -89,7 +89,7 @@ public:
                 {{ p.Type }} {{ p.Name }}
             {{- end -}}
         {{- end -}}
-    );
+    ) = 0;
     {{- end }}
     {{- end }}
     {{- end }}
@@ -146,7 +146,7 @@ protected:
                 {{ p.Type }} {{ p.Name }}
             {{- end -}}
         {{- end -}}
-    ){{ if m.IsConst == true }} const{{ end }};
+    ){{ if m.IsConst == true }} const{{ end }} = 0;
     {{- end }}
     {{- end }}
     {{- end }}
@@ -163,7 +163,7 @@ protected:
                 {{ p.Type }} {{ p.Name }}
             {{- end -}}
         {{- end -}}
-    );
+    ) = 0;
     {{- end }}
     {{- end }}
     {{- end }}
@@ -223,7 +223,7 @@ private:
                 {{ p.Type }} {{ p.Name }}
             {{- end -}}
         {{- end -}}
-    ){{- if m.IsConst == true }} const{{ end }};
+    ){{- if m.IsConst == true }} const{{ end }} = 0;
     {{- end }}
     {{- end }}
     {{- end }}
@@ -237,10 +237,10 @@ private:
         {{- if m.Parameters != null && m.Parameters.size > 0 -}}
             {{- for p in m.Parameters -}}
                 {{- if !for.first }}, {{ end -}}
-                {{ p.Type }} {{ p.Name }}
+                {{ p.Type }} {{ p.Name }} 
             {{- end -}}
         {{- end -}}
-    );
+    ) = 0;
     {{- end }}
     {{- end }}
     {{- end }}

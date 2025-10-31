@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 
 using CppParser.Models;
 
+using CppParser.Models;
+
 namespace CppGenerator.Services
 {
-    /// <summary>对后端传来的 CppClass 做净化/兜底/排序/修复（不改变业务语义）。</summary>
+    /// <summary>对模型做净化/兜底/排序/修复（不改变业务语义）。</summary>
     public interface ICppModelPreprocessor
     {
-        CppClass Process(CppClass model);
+        CppClass ProcessClass(CppClass model);
+        CppEnum ProcessEnum(CppEnum model);
     }
 }

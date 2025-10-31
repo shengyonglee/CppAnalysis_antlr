@@ -14,15 +14,11 @@ public:
     
     virtual ~Person();
 
-    std::string getName();
+    std::string getName() const;
 
     void setName(const std::string& v);
 
-    std::string name = "Tom";
-
-private:
-
-    int age;
+    std::string name1 = "Tom";
 
 };
 

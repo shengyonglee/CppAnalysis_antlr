@@ -1,5 +1,4 @@
-﻿/* @file {{ NAME_LOWER }}.cpp */
-#include "{{ c.Name }}.h"
+﻿#include "{{ c.Name }}.h"
 
 {{ c.Name }}::{{ c.Name }}()
 {
