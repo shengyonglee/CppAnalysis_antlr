@@ -31,7 +31,7 @@ namespace CppParser.Services
                 var p = new CodeProperty { Visibility = visibility };
                 FillNamePtrRefArray(p, d);
 
-                p.FullType = (baseType + " " + JoinTokens(d)).Trim();
+                //p.FullType = (baseType + " " + JoinTokens(d)).Trim();
                 p.Type = baseType.Trim();
                 MarkTypeFlagsFromDeclSpecs(p, baseType);
 
@@ -74,8 +74,8 @@ namespace CppParser.Services
             if (vss != null)
             {
                 var vtxt = JoinTokens(vss);
-                if (vtxt.Contains("override")) m.IsOverride = true;
-                if (vtxt.Contains("final")) m.IsFinal = true;
+                //if (vtxt.Contains("override")) m.IsOverride = true;
+                //if (vtxt.Contains("final")) m.IsFinal = true;
             }
             return m;
         }
@@ -106,10 +106,10 @@ namespace CppParser.Services
             if (!string.IsNullOrEmpty(tailText))
             {
                 if (tailText.Contains("=0")) { m.IsPureVirtual = true; m.IsVirtual = true; }
-                if (tailText.Contains("=default")) m.IsDefaultImplementation = true;
-                if (tailText.Contains("=delete")) m.IsDeleted = true;
-                if (tailText.Contains("override")) m.IsOverride = true;
-                if (tailText.Contains("final")) m.IsFinal = true;
+                //if (tailText.Contains("=default")) m.IsDefaultImplementation = true;
+                //if (tailText.Contains("=delete")) m.IsDeleted = true;
+                //if (tailText.Contains("override")) m.IsOverride = true;
+                //if (tailText.Contains("final")) m.IsFinal = true;
             }
             return m;
         }
@@ -121,7 +121,7 @@ namespace CppParser.Services
             var decl = init.declarator();
             if (decl != null) FillNamePtrRefArray(p, decl);
 
-            p.FullType = (baseType + " " + JoinTokens(decl)).Trim();
+            //p.FullType = (baseType + " " + JoinTokens(decl)).Trim();
             p.Type = baseType.Trim();
             MarkTypeFlagsFromDeclSpecs(p, baseType);
 
@@ -140,9 +140,9 @@ namespace CppParser.Services
             if (!string.IsNullOrEmpty(stripped))
             {
                 m.ReturnType = stripped;
-                if (stripped.Contains("*")) m.ReturnTypeIsPointer = true;
-                if (stripped.Contains("&")) m.ReturnTypeIsReference = true;
-                if (stripped.Contains("const")) m.IsReturnConst = true;
+                //if (stripped.Contains("*")) m.ReturnTypeIsPointer = true;
+                //if (stripped.Contains("&")) m.ReturnTypeIsReference = true;
+                //if (stripped.Contains("const")) m.IsReturnConst = true;
             }
 
             // 名称（常规路径失败则兜底找 IdExpression）
@@ -164,8 +164,8 @@ namespace CppParser.Services
                     foreach (var pd in list.parameterDeclaration())
                         m.Parameters.Add(BuildParameter(pd));
 
-                if (pq.cvqualifierseq() != null && JoinTokens(pq.cvqualifierseq()).Contains("const"))
-                    m.IsConst = true;
+                //if (pq.cvqualifierseq() != null && JoinTokens(pq.cvqualifierseq()).Contains("const"))
+                    //m.IsConst = true;
             }
             else if (ContainsTerminal(declarator, "("))
             {
@@ -184,11 +184,11 @@ namespace CppParser.Services
             if (pdecl != null)
             {
                 FillNamePtrRefArray(par, pdecl);
-                if (JoinTokens(pdecl).Contains("&&")) par.IsRValueReference = true;
+                //if (JoinTokens(pdecl).Contains("&&")) par.IsRValueReference = true;
             }
             else { par.Name = string.Empty; }
 
-            par.FullType = (dsText + " " + JoinTokens(pdecl)).Trim();
+            //par.FullType = (dsText + " " + JoinTokens(pdecl)).Trim();
             par.Type = dsText.Trim();
             MarkTypeFlagsFromDeclSpecs(par, dsText);
 
@@ -218,12 +218,12 @@ namespace CppParser.Services
             target.Name = string.IsNullOrEmpty(id) ? "(anonymous)" : id;
 
             var text = JoinTokens(decl);
-            if (text.Contains("*")) target.IsPointer = true;
-            if (text.Contains("&")) target.IsReference = true;
+            //if (text.Contains("*")) target.IsPointer = true;
+            //if (text.Contains("&")) target.IsReference = true;
 
             var noptr = decl.noPointerDeclarator() ?? decl.pointerDeclarator()?.noPointerDeclarator();
             var (hasArr, size) = FindArraySuffix(noptr);
-            if (hasArr) { target.IsArray = true; target.ArraySize = size; }
+            //if (hasArr) { target.IsArray = true; target.ArraySize = size; }
         }
 
         private static (bool hasArray, string? size) FindArraySuffix(CPP14Parser.NoPointerDeclaratorContext? noptr)
@@ -257,23 +257,23 @@ namespace CppParser.Services
 
         private static void MarkTypeFlagsFromDeclSpecs(CodeProperty p, string t)
         {
-            if (t.Contains("const")) p.IsConst = true;
-            if (t.Contains("volatile")) p.IsVolatile = true;
-            if (t.Contains("mutable")) p.IsMutable = true;
-            if (t.Contains("static")) p.IsStatic = true;
-            if (t.Contains("signed")) p.IsSigned = true;
-            if (t.Contains("unsigned")) p.IsUnsigned = true;
-            if (t.Contains("short")) p.IsShort = true;
-            if (t.Contains("long")) p.IsLong = true;
+            //if (t.Contains("const")) p.IsConst = true;
+            //if (t.Contains("volatile")) p.IsVolatile = true;
+            //if (t.Contains("mutable")) p.IsMutable = true;
+            //if (t.Contains("static")) p.IsStatic = true;
+            //if (t.Contains("signed")) p.IsSigned = true;
+            //if (t.Contains("unsigned")) p.IsUnsigned = true;
+            //if (t.Contains("short")) p.IsShort = true;
+            //if (t.Contains("long")) p.IsLong = true;
         }
 
         private static void MarkMethodPrefixFlags(CodeMethod m, string before)
         {
-            if (before.Contains("inline")) m.IsInline = true;
-            if (before.Contains("static")) m.IsStatic = true;
-            if (before.Contains("explicit")) m.IsExplicit = true;
-            if (before.Contains("friend")) m.IsFriend = true;
-            if (before.Contains("constexpr")) m.IsConstexpr = true;
+            //if (before.Contains("inline")) m.IsInline = true;
+            //if (before.Contains("static")) m.IsStatic = true;
+            //if (before.Contains("explicit")) m.IsExplicit = true;
+            //if (before.Contains("friend")) m.IsFriend = true;
+            //if (before.Contains("constexpr")) m.IsConstexpr = true;
             if (before.Contains("virtual")) m.IsVirtual = true;
         }
 

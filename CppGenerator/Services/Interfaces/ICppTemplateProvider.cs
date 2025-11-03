@@ -15,5 +15,6 @@ namespace CppGenerator.Services
         Template GetClassSourceTemplate();
         Template GetEnumHeaderTemplate();
         Template GetInterfaceHeaderTemplate();
+        Template GetStructHeaderTemplate();
     }
 }

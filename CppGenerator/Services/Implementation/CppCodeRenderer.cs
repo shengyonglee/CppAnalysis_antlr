@@ -31,6 +31,12 @@ namespace CppGenerator.Services
             return _provider.GetInterfaceHeaderTemplate().Render(tctx);
         }
 
+        public string RenderStruct(CodeClass model)
+        {
+            var tctx = CreateContextForClass(model);
+            return _provider.GetStructHeaderTemplate().Render(tctx);
+        }
+
         // ===== helpers =====
         private static TemplateContext CreateContextForClass(CodeClass c)
         {

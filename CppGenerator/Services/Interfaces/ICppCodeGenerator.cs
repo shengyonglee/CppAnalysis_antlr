@@ -14,5 +14,6 @@ namespace CppGenerator.Services
         RenderResult GenerateClass(CodeClass model);
         string GenerateEnum(CodeEnum model);
         string GenerateInterface(CodeClass model);
+        string GenerateStruct(CodeClass model);
     }
 }

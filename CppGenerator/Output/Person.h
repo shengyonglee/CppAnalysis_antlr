@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-
-class Person
+class x
+class Person :public 
 {
 
 public:
@@ -14,7 +14,7 @@ public:
     
     virtual ~Person();
 
-    std::string getName() const;
+    std::string getName();
 
     void setName(const std::string& v);
 

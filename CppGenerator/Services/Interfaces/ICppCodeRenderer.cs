@@ -15,5 +15,7 @@ namespace CppGenerator.Services
         RenderResult RenderClass(CodeClass model);   // .h + .cpp
         string RenderEnum(CodeEnum model);   // 仅 .h
         string RenderInterface(CodeClass model); // 仅 .h
+        string RenderStruct(CodeClass model); // 仅 .h
+
     }
 }

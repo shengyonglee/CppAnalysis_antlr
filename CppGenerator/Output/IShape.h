@@ -14,9 +14,9 @@ public:
     
     virtual ~IShape();
 
-    double Area() const = 0;
+    double Area() = 0;
 
-    double Perimeter() const = 0;
+    double Perimeter() = 0;
 
 };
 

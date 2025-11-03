@@ -11,28 +11,36 @@ namespace CppGenerator.Services
         private readonly string _classSourcePath;
         private readonly string _enumHeaderPath;
         private readonly string _interfaceHeaderPath;
+        private readonly string _structHeaderPath;
+
 
         private Template? _classHeaderTpl;
         private Template? _classSourceTpl;
         private Template? _enumHeaderTpl;
         private Template? _interfaceHeaderTpl;
+        private Template? _structfaceHeaderTpl;
+
 
         public CppTemplateProvider(
             string classHeaderTemplatePath,
             string classSourceTemplatePath,
             string enumHeaderTemplatePath,
-            string interfaceHeaderTemplatePath)
+            string interfaceHeaderTemplatePath,
+            string structHeaderTemplatePath
+            )
         {
             _classHeaderPath = classHeaderTemplatePath ?? throw new ArgumentNullException(nameof(classHeaderTemplatePath));
             _classSourcePath = classSourceTemplatePath ?? throw new ArgumentNullException(nameof(classSourceTemplatePath));
             _enumHeaderPath = enumHeaderTemplatePath ?? throw new ArgumentNullException(nameof(enumHeaderTemplatePath));
             _interfaceHeaderPath = interfaceHeaderTemplatePath ?? throw new ArgumentNullException(nameof(interfaceHeaderTemplatePath));
+            _structHeaderPath = structHeaderTemplatePath ?? throw new ArgumentNullException(nameof(structHeaderTemplatePath));
         }
 
         public Template GetClassHeaderTemplate() => _classHeaderTpl ??= Compile(_classHeaderPath);
         public Template GetClassSourceTemplate() => _classSourceTpl ??= Compile(_classSourcePath);
         public Template GetEnumHeaderTemplate() => _enumHeaderTpl ??= Compile(_enumHeaderPath);
         public Template GetInterfaceHeaderTemplate() => _interfaceHeaderTpl ??= Compile(_interfaceHeaderPath);
+        public Template GetStructHeaderTemplate() => _structfaceHeaderTpl ??= Compile(_structHeaderPath);
 
         private static Template Compile(string path)
         {

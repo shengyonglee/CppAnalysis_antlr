@@ -17,7 +17,9 @@ namespace CppGenerator
                 classHeaderTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\class_header.sbn",
                 classSourceTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\class_source.sbn",
                 enumHeaderTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\enum_header.sbn",
-                interfaceHeaderTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\interface_header.sbn");
+                interfaceHeaderTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\interface_header.sbn",
+                structHeaderTemplatePath: @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppGenerator\Templates\class_header.sbn");
+
             var renderer = new CppCodeRenderer(tpl);
             var generator = new CppCodeGenerator(pre, renderer);
 
@@ -32,6 +34,9 @@ namespace CppGenerator
 
             // 3) 生成“接口”的示例
             GenerateInterfaceSample(outputDir, generator);
+
+            // 4) 生成“数据类型”的示例
+            GenerateStructeSample(outputDir, generator);
 
             Console.WriteLine("Done.");
         }
@@ -51,7 +56,7 @@ namespace CppGenerator
                 },
                 Methods = new List<CodeMethod>
                 {
-                    new CodeMethod { Name = "getName", ReturnType = "std::string", Visibility = EnumVisibility.Public, IsConst = true },
+                    new CodeMethod { Name = "getName", ReturnType = "std::string", Visibility = EnumVisibility.Public},
                     new CodeMethod {
                         Name = "setName", ReturnType = "void", Visibility = EnumVisibility.Public,
                         Parameters = new List<CodeMethodParameter> {
@@ -97,8 +102,8 @@ namespace CppGenerator
                 Stereotype = EnumClassType.Interface,
                 Methods = new List<CodeMethod>
                 {
-                    new CodeMethod { Name = "Area",    ReturnType = "double", Visibility = EnumVisibility.Public, IsConst = true, IsVirtual = true, IsPureVirtual = true },
-                    new CodeMethod { Name = "Perimeter", ReturnType = "double", Visibility = EnumVisibility.Public, IsConst = true, IsVirtual = true, IsPureVirtual = true }
+                    new CodeMethod { Name = "Area",    ReturnType = "double", Visibility = EnumVisibility.Public, IsPureVirtual = true },
+                    new CodeMethod { Name = "Perimeter", ReturnType = "double", Visibility = EnumVisibility.Public,IsVirtual = true}
                 }
                 // 接口不应含有数据成员；若模型里带了属性，预处理会尽量温和处理/模板会忽略
             };
@@ -108,5 +113,28 @@ namespace CppGenerator
             File.WriteAllText(Path.Combine(outputDir, $"{iface.Name}.h"), ifaceHeader);
             Console.WriteLine($"[Iface]  Generated: {Path.Combine(outputDir, $"{iface.Name}.h")}");
         }
+
+        private static void GenerateStructeSample(string outputDir, ICppCodeGenerator generator)
+        {
+            // 接口用 CppClass 承载，但 Stereotype=Interface，且只包含纯虚函数
+            var cppstruct = new CodeClass
+            {
+                Name = "Node",
+                Stereotype = EnumClassType.Struct,
+                Properties = new List<CodeProperty>
+                {
+                    new CodeProperty { Name = "left", Type = "Node", Visibility = EnumVisibility.Public},
+                    new CodeProperty { Name = "right", Type = "Node", Visibility = EnumVisibility.Public},
+                },
+
+                // 接口不应含有数据成员；若模型里带了属性，预处理会尽量温和处理/模板会忽略
+            };
+
+            string cppstrcutHeader = generator.GenerateStruct(cppstruct);
+
+            File.WriteAllText(Path.Combine(outputDir, $"{cppstruct.Name}.h"), cppstrcutHeader);
+            Console.WriteLine($"[Iface]  Generated: {Path.Combine(outputDir, $"{cppstruct.Name}.h")}");
+        }
+
     }
 }

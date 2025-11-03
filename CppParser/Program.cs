@@ -104,20 +104,20 @@ class Program
                 var flags = string.Join(", ", new[]
                 {
                     p.IsStatic ? "static" : null,
-                    p.IsConst ? "const" : null,
-                    p.IsVolatile ? "volatile" : null,
-                    p.IsPointer ? "*" : null,
-                    p.IsReference ? "&" : null,
-                    p.IsArray ? "[]" : null,
-                    p.IsSigned ? "signed" : null,
-                    p.IsUnsigned ? "unsigned" : null,
-                    p.IsShort ? "short" : null,
-                    p.IsLong ? "long" : null,
-                    p.IsMutable ? "mutable" : null
+                    //p.IsConst ? "const" : null,
+                    //p.IsVolatile ? "volatile" : null,
+                    //p.IsPointer ? "*" : null,
+                    //p.IsReference ? "&" : null,
+                    //p.IsArray ? "[]" : null,
+                    //p.IsSigned ? "signed" : null,
+                    //p.IsUnsigned ? "unsigned" : null,
+                    //p.IsShort ? "short" : null,
+                    //p.IsLong ? "long" : null,
+                    //p.IsMutable ? "mutable" : null
                 }.Where(s => s != null));
 
-                var typeText = !string.IsNullOrWhiteSpace(p.FullType) ? p.Type : p.Type ?? "(unknown)";
-                Console.WriteLine($"{pad}    - [{p.Visibility}] {typeText} {p.Name}{(p.IsArray ? $"[{p.ArraySize}]" : "")}{(string.IsNullOrEmpty(p.DefaultValue) ? "" : $"  {p.DefaultValue}")}{(string.IsNullOrEmpty(flags) ? "" : $"  {{{flags}}}")}");
+                //var typeText = !string.IsNullOrWhiteSpace(p.FullType) ? p.Type : p.Type ?? "(unknown)";
+                //Console.WriteLine($"{pad}    - [{p.Visibility}] {typeText} {p.Name}{(p.IsArray ? $"[{p.ArraySize}]" : "")}{(string.IsNullOrEmpty(p.DefaultValue) ? "" : $"  {p.DefaultValue}")}{(string.IsNullOrEmpty(flags) ? "" : $"  {{{flags}}}")}");
             }
         }
 
@@ -128,38 +128,38 @@ class Program
             foreach (var m in c.Methods)
             {
                 var returnType = new StringBuilder();
-                if (m.IsReturnConst) returnType.Append("const ");
-                returnType.Append(string.IsNullOrWhiteSpace(m.ReturnType) ? "/*ctor/dtor/operator*/" : m.ReturnType);
-                if (m.ReturnTypeIsPointer) returnType.Append(" *");
-                if (m.ReturnTypeIsReference) returnType.Append(" &");
+                //if (m.IsReturnConst) returnType.Append("const ");
+                //returnType.Append(string.IsNullOrWhiteSpace(m.ReturnType) ? "/*ctor/dtor/operator*/" : m.ReturnType);
+                //if (m.ReturnTypeIsPointer) returnType.Append(" *");
+                //if (m.ReturnTypeIsReference) returnType.Append(" &");
 
-                var paramList = (m.Parameters == null || m.Parameters.Count == 0)
-                    ? ""
-                    : string.Join(", ", m.Parameters.Select(par =>
-                    {
-                        var pt = !string.IsNullOrWhiteSpace(par.FullType) ? par.Type : par.Type ?? "(unknown)";
-                        var rref = par.IsRValueReference ? "&&" : "";
-                        var arr = par.IsArray ? $"[{par.ArraySize}]" : "";
-                        return $"{pt}{(par.IsPointer ? " *" : "")}{(par.IsReference ? " &" : "")}{rref} {par.Name}{arr}";
-                    }));
+                //var paramList = (m.Parameters == null || m.Parameters.Count == 0)
+                //    ? ""
+                //    : string.Join(", ", m.Parameters.Select(par =>
+                //    {
+                //        //var pt = !string.IsNullOrWhiteSpace(par.FullType) ? par.Type : par.Type ?? "(unknown)";
+                //        //var rref = par.IsRValueReference ? "&&" : "";
+                //        //var arr = par.IsArray ? $"[{par.ArraySize}]" : "";
+                //        //return $"{pt}{(par.IsPointer ? " *" : "")}{(par.IsReference ? " &" : "")}{rref} {par.Name}{arr}";
+                //    }));
 
-                var flags = string.Join(", ", new[]
-                {
-                    m.IsInline ? "inline" : null,
-                    m.IsStatic ? "static" : null,
-                    m.IsExplicit ? "explicit" : null,
-                    m.IsFriend ? "friend" : null,
-                    m.IsConstexpr ? "constexpr" : null,
-                    m.IsVirtual ? "virtual" : null,
-                    m.IsPureVirtual ? "pure-virtual" : null,
-                    m.IsConst ? "const" : null,
-                    m.IsDefaultImplementation ? "default" : null,
-                    m.IsDeleted ? "delete" : null,
-                    m.IsOverride ? "override" : null,
-                    m.IsFinal ? "final" : null
-                }.Where(s => s != null));
+                //var flags = string.Join(", ", new[]
+                //{
+                //    m.IsInline ? "inline" : null,
+                //    m.IsStatic ? "static" : null,
+                //    m.IsExplicit ? "explicit" : null,
+                //    m.IsFriend ? "friend" : null,
+                //    m.IsConstexpr ? "constexpr" : null,
+                //    m.IsVirtual ? "virtual" : null,
+                //    m.IsPureVirtual ? "pure-virtual" : null,
+                //    m.IsConst ? "const" : null,
+                //    m.IsDefaultImplementation ? "default" : null,
+                //    m.IsDeleted ? "delete" : null,
+                //    m.IsOverride ? "override" : null,
+                //    m.IsFinal ? "final" : null
+                //}.Where(s => s != null));
 
-                Console.WriteLine($"{pad}    - [{m.Visibility}] {returnType} {m.Name}({paramList}){(string.IsNullOrEmpty(flags) ? "" : $"  {{{flags}}}")}");
+               // Console.WriteLine($"{pad}    - [{m.Visibility}] {returnType} {m.Name}({paramList}){(string.IsNullOrEmpty(flags) ? "" : $"  {{{flags}}}")}");
             }
         }
 

@@ -33,5 +33,10 @@ namespace CppGenerator.Services
             var fixedModel = _pre.ProcessClass(model);
             return _renderer.RenderInterface(fixedModel);
         }
+        public string GenerateStruct(CodeClass model)
+        {
+            var fixedModel = _pre.ProcessClass(model);
+            return _renderer.RenderStruct(fixedModel);
+        }
     }
 }
