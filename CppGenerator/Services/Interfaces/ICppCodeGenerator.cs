@@ -11,8 +11,8 @@ namespace CppGenerator.Services
     /// <summary>门面：预处理 → 渲染；仅返回字符串。</summary>
     public interface ICppCodeGenerator
     {
-        RenderResult GenerateClass(CppClass model);
-        string GenerateEnum(CppEnum model);
-        string GenerateInterface(CppClass model);
+        RenderResult GenerateClass(CodeClass model);
+        string GenerateEnum(CodeEnum model);
+        string GenerateInterface(CodeClass model);
     }
 }

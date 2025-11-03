@@ -11,7 +11,7 @@ namespace CppGenerator.Services
         private readonly ICppTemplateProvider _provider;
         public CppCodeRenderer(ICppTemplateProvider provider) => _provider = provider;
 
-        public RenderResult RenderClass(CppClass model)
+        public RenderResult RenderClass(CodeClass model)
         {
             var tctx = CreateContextForClass(model);
             var header = _provider.GetClassHeaderTemplate().Render(tctx);
@@ -19,20 +19,20 @@ namespace CppGenerator.Services
             return new RenderResult { HeaderCode = header, SourceCode = source };
         }
 
-        public string RenderEnum(CppEnum model)
+        public string RenderEnum(CodeEnum model)
         {
             var tctx = CreateContextForEnum(model);
             return _provider.GetEnumHeaderTemplate().Render(tctx);
         }
 
-        public string RenderInterface(CppClass model)
+        public string RenderInterface(CodeClass model)
         {
             var tctx = CreateContextForClass(model);
             return _provider.GetInterfaceHeaderTemplate().Render(tctx);
         }
 
         // ===== helpers =====
-        private static TemplateContext CreateContextForClass(CppClass c)
+        private static TemplateContext CreateContextForClass(CodeClass c)
         {
             var tctx = new TemplateContext { MemberRenamer = m => m.Name };
             var g = new ScriptObject();
@@ -63,7 +63,7 @@ namespace CppGenerator.Services
             return tctx;
         }
 
-        private static TemplateContext CreateContextForEnum(CppEnum e)
+        private static TemplateContext CreateContextForEnum(CodeEnum e)
         {
             var tctx = new TemplateContext { MemberRenamer = m => m.Name };
             var g = new ScriptObject();

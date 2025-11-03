@@ -11,7 +11,7 @@ namespace CppParser.Services
     public sealed class TypeBuilder
     {
         // ---------- 类内字段 ----------
-        public IEnumerable<CppProperty> BuildFieldsFromMemberDeclaration(
+        public IEnumerable<CodeProperty> BuildFieldsFromMemberDeclaration(
             CPP14Parser.MemberdeclarationContext md, EnumVisibility visibility)
         {
             var ds = md.declSpecifierSeq();
@@ -28,7 +28,7 @@ namespace CppParser.Services
                 // 排除成员函数原型（保持原逻辑）
                 if (HeaderModelBuilder.IsDeclaratorMethodPrototype(d)) continue;
 
-                var p = new CppProperty { Visibility = visibility };
+                var p = new CodeProperty { Visibility = visibility };
                 FillNamePtrRefArray(p, d);
 
                 p.FullType = (baseType + " " + JoinTokens(d)).Trim();
@@ -43,7 +43,7 @@ namespace CppParser.Services
         }
 
         // ---------- 顶层字段（保留） ----------
-        public IEnumerable<CppProperty> BuildFieldsFromSimpleDeclaration(
+        public IEnumerable<CodeProperty> BuildFieldsFromSimpleDeclaration(
             CPP14Parser.SimpleDeclarationContext ctx, EnumVisibility visibility)
         {
             var declSpecs = ctx.declSpecifierSeq();
@@ -61,10 +61,10 @@ namespace CppParser.Services
         }
 
         // ---------- 方法 ----------
-        public CppMethod BuildMethodFromFunctionDefinition(
+        public CodeMethod BuildMethodFromFunctionDefinition(
             CPP14Parser.FunctionDefinitionContext ctx, EnumVisibility visibility)
         {
-            var m = new CppMethod { Visibility = visibility };
+            var m = new CodeMethod { Visibility = visibility };
 
             var before = ctx.declSpecifierSeq() != null ? JoinTokens(ctx.declSpecifierSeq()) : string.Empty;
             FillMethodSignatureFromDeclarator(m, before, ctx.declarator());
@@ -80,11 +80,11 @@ namespace CppParser.Services
             return m;
         }
 
-        public CppMethod BuildMethodFromMemberDeclarationFunction(
+        public CodeMethod BuildMethodFromMemberDeclarationFunction(
             CPP14Parser.MemberdeclarationContext ctx,
             EnumVisibility visibility)
         {
-            var m = new CppMethod { Visibility = visibility };
+            var m = new CodeMethod { Visibility = visibility };
 
             var before = ctx.declSpecifierSeq() != null ? JoinTokens(ctx.declSpecifierSeq()) : string.Empty;
 
@@ -115,9 +115,9 @@ namespace CppParser.Services
         }
 
         // ---------- 内部：字段 ----------
-        private CppProperty BuildFieldFromInitDeclarator(string baseType, CPP14Parser.InitDeclaratorContext init)
+        private CodeProperty BuildFieldFromInitDeclarator(string baseType, CPP14Parser.InitDeclaratorContext init)
         {
-            var p = new CppProperty();
+            var p = new CodeProperty();
             var decl = init.declarator();
             if (decl != null) FillNamePtrRefArray(p, decl);
 
@@ -130,7 +130,7 @@ namespace CppParser.Services
         }
 
         // ---------- 内部：方法 ----------
-        private void FillMethodSignatureFromDeclarator(CppMethod m, string before, CPP14Parser.DeclaratorContext declarator)
+        private void FillMethodSignatureFromDeclarator(CodeMethod m, string before, CPP14Parser.DeclaratorContext declarator)
         {
             MarkMethodPrefixFlags(m, before);
 
@@ -173,9 +173,9 @@ namespace CppParser.Services
             }
         }
 
-        private CppMethodParameter BuildParameter(CPP14Parser.ParameterDeclarationContext pd)
+        private CodeMethodParameter BuildParameter(CPP14Parser.ParameterDeclarationContext pd)
         {
-            var par = new CppMethodParameter();
+            var par = new CodeMethodParameter();
 
             var ds = pd.declSpecifierSeq();
             var dsText = ds != null ? JoinTokens(ds) : string.Empty;
@@ -207,7 +207,7 @@ namespace CppParser.Services
             return string.Empty;
         }
 
-        private void FillNamePtrRefArray(CppProperty target, CPP14Parser.DeclaratorContext decl)
+        private void FillNamePtrRefArray(CodeProperty target, CPP14Parser.DeclaratorContext decl)
         {
             var id = FindIdInDeclarator(decl);
             if (string.IsNullOrEmpty(id))
@@ -255,7 +255,7 @@ namespace CppParser.Services
             return (false, null);
         }
 
-        private static void MarkTypeFlagsFromDeclSpecs(CppProperty p, string t)
+        private static void MarkTypeFlagsFromDeclSpecs(CodeProperty p, string t)
         {
             if (t.Contains("const")) p.IsConst = true;
             if (t.Contains("volatile")) p.IsVolatile = true;
@@ -267,7 +267,7 @@ namespace CppParser.Services
             if (t.Contains("long")) p.IsLong = true;
         }
 
-        private static void MarkMethodPrefixFlags(CppMethod m, string before)
+        private static void MarkMethodPrefixFlags(CodeMethod m, string before)
         {
             if (before.Contains("inline")) m.IsInline = true;
             if (before.Contains("static")) m.IsStatic = true;

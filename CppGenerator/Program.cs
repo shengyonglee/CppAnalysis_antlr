@@ -39,22 +39,22 @@ namespace CppGenerator
         /// <summary>演示：把 UML 中一个“类”生成 .h/.cpp 字符串并写到 Output。</summary>
         private static void GenerateClassSample(string outputDir, ICppCodeGenerator generator)
         {
-            var cppClass = new CppClass
+            var cppClass = new CodeClass
             {
                 Name = "Person",
                 Stereotype = EnumClassType.Class,
-                Properties = new List<CppProperty>
+                Properties = new List<CodeProperty>
                 {
-                    new CppProperty { Name = "name1", Type = "std::string", Visibility = EnumVisibility.Public,  DefaultValue = "\"Tom\"" },
-                    new CppProperty { Name = "age",  Type = "int",          Visibility = EnumVisibility.Private },
-                    new CppProperty { Name = "name2", Type = "std::string", Visibility = EnumVisibility.Private,  DefaultValue = "\"Tom1\"" },
+                    new CodeProperty { Name = "name1", Type = "std::string", Visibility = EnumVisibility.Public,  DefaultValue = "\"Tom\"" },
+                    new CodeProperty { Name = "age",  Type = "int",          Visibility = EnumVisibility.Private },
+                    new CodeProperty { Name = "name2", Type = "std::string", Visibility = EnumVisibility.Private,  DefaultValue = "\"Tom1\"" },
                 },
-                Methods = new List<CppMethod>
+                Methods = new List<CodeMethod>
                 {
-                    new CppMethod { Name = "getName", ReturnType = "std::string", Visibility = EnumVisibility.Public, IsConst = true },
-                    new CppMethod {
+                    new CodeMethod { Name = "getName", ReturnType = "std::string", Visibility = EnumVisibility.Public, IsConst = true },
+                    new CodeMethod {
                         Name = "setName", ReturnType = "void", Visibility = EnumVisibility.Public,
-                        Parameters = new List<CppMethodParameter> {
+                        Parameters = new List<CodeMethodParameter> {
                             new() { Name = "v", Type = "const std::string&" }
                         }
                     }
@@ -73,7 +73,7 @@ namespace CppGenerator
         /// <summary>演示：把 UML 中一个“枚举”生成 .h 字符串并写到 Output。</summary>
         private static void GenerateEnumSample(string outputDir, ICppCodeGenerator generator)
         {
-            var cppEnum = new CppEnum
+            var cppEnum = new CodeEnum
             {
                 Name = "Color",
                 IsScoped = true, // enum class
@@ -91,14 +91,14 @@ namespace CppGenerator
         private static void GenerateInterfaceSample(string outputDir, ICppCodeGenerator generator)
         {
             // 接口用 CppClass 承载，但 Stereotype=Interface，且只包含纯虚函数
-            var iface = new CppClass
+            var iface = new CodeClass
             {
                 Name = "IShape",
                 Stereotype = EnumClassType.Interface,
-                Methods = new List<CppMethod>
+                Methods = new List<CodeMethod>
                 {
-                    new CppMethod { Name = "Area",    ReturnType = "double", Visibility = EnumVisibility.Public, IsConst = true, IsVirtual = true, IsPureVirtual = true },
-                    new CppMethod { Name = "Perimeter", ReturnType = "double", Visibility = EnumVisibility.Public, IsConst = true, IsVirtual = true, IsPureVirtual = true }
+                    new CodeMethod { Name = "Area",    ReturnType = "double", Visibility = EnumVisibility.Public, IsConst = true, IsVirtual = true, IsPureVirtual = true },
+                    new CodeMethod { Name = "Perimeter", ReturnType = "double", Visibility = EnumVisibility.Public, IsConst = true, IsVirtual = true, IsPureVirtual = true }
                 }
                 // 接口不应含有数据成员；若模型里带了属性，预处理会尽量温和处理/模板会忽略
             };

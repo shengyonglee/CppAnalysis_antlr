@@ -12,20 +12,20 @@ namespace CppGenerator.Services
     public sealed class CppModelPreprocessor : ICppModelPreprocessor
     {
         // —— 类 —— //
-        public CppClass ProcessClass(CppClass model)
+        public CodeClass ProcessClass(CodeClass model)
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
 
             model.Name = string.IsNullOrWhiteSpace(model.Name) ? "Unnamed" : model.Name.Trim();
 
-            foreach (var p in model.Properties ?? Enumerable.Empty<CppProperty>())
+            foreach (var p in model.Properties ?? Enumerable.Empty<CodeProperty>())
                 if (p.Visibility == EnumVisibility.None) p.Visibility = EnumVisibility.Private;
 
-            foreach (var m in model.Methods ?? Enumerable.Empty<CppMethod>())
+            foreach (var m in model.Methods ?? Enumerable.Empty<CodeMethod>())
                 if (m.Visibility == EnumVisibility.None) m.Visibility = EnumVisibility.Public;
 
             var allRels = model.Associations
-                .Concat<CppRelationship>(model.Aggregations)
+                .Concat<CodeRelationship>(model.Aggregations)
                 .Concat(model.Compositions);
             foreach (var r in allRels)
             {
@@ -52,9 +52,9 @@ namespace CppGenerator.Services
             }
 
             // 轻度类型清洗
-            foreach (var p in model.Properties ?? Enumerable.Empty<CppProperty>())
+            foreach (var p in model.Properties ?? Enumerable.Empty<CodeProperty>())
                 if (p.Type != null) p.Type = p.Type.Replace("std ::", "std::");
-            foreach (var m in model.Methods ?? Enumerable.Empty<CppMethod>())
+            foreach (var m in model.Methods ?? Enumerable.Empty<CodeMethod>())
                 if (m.ReturnType != null) m.ReturnType = m.ReturnType.Replace("std ::", "std::");
 
             // 若标记为 Interface，确保方法是 virtual/pure & 无数据成员（尽量不强改，仅兜底）
@@ -66,7 +66,7 @@ namespace CppGenerator.Services
                     // 你也可以在这里清空：model.Properties.Clear();
                 }
 
-                foreach (var m in model.Methods ?? Enumerable.Empty<CppMethod>())
+                foreach (var m in model.Methods ?? Enumerable.Empty<CodeMethod>())
                 {
                     // 让模板做 "=0" 输出，本处不强改 IsPureVirtual
                     if (!m.IsVirtual) m.IsVirtual = true;
@@ -77,7 +77,7 @@ namespace CppGenerator.Services
         }
 
         // —— 枚举 —— //
-        public CppEnum ProcessEnum(CppEnum model)
+        public CodeEnum ProcessEnum(CodeEnum model)
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
             model.Name = string.IsNullOrWhiteSpace(model.Name) ? "UnnamedEnum" : model.Name.Trim();

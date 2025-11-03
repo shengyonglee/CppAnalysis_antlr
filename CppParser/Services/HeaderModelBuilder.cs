@@ -13,16 +13,16 @@ namespace CppParser.Services
     {
         private readonly string _fileName;
         private readonly Stack<string> _ns = new();
-        private readonly Stack<CppClass> _class = new();
+        private readonly Stack<CodeClass> _class = new();
         private readonly AccessControl _access = new();
         private readonly TypeBuilder _types = new();
 
-        private readonly CppHeaderFile _header;
+        private readonly CodeHeaderFile _header;
 
         public HeaderModelBuilder(string fileName)
         {
             _fileName = fileName ?? string.Empty;
-            _header = new CppHeaderFile { FileName = _fileName };
+            _header = new CodeHeaderFile { FileName = _fileName };
         }
 
         public override object? Visit([NotNull] IParseTree tree)
@@ -53,7 +53,7 @@ namespace CppParser.Services
                 _ => EnumClassType.Class
             };
 
-            var cls = new CppClass
+            var cls = new CodeClass
             {
                 Stereotype = stereotype,
                 Name = BuildQname(ResolveClassName(head))
@@ -74,7 +74,7 @@ namespace CppParser.Services
                     if (string.IsNullOrWhiteSpace(name)) continue;
 
                     // 新：落到 Generalizations，保持原有“只记录名称”的逻辑，不引入新的语义字段
-                    var gen = new CppGeneralization
+                    var gen = new CodeGeneralization
                     {
                         // 模型里最关键的是目标类型；其余字段（Multiplicity/RoleName等）此处不设置，保持原逻辑不变
                         TargetClass = name
@@ -124,7 +124,7 @@ namespace CppParser.Services
         public override object? VisitEnumSpecifier([NotNull] CPP14Parser.EnumSpecifierContext ctx)
         {
             var head = ctx.enumHead();
-            var e = new CppEnum
+            var e = new CodeEnum
             {
                 IsScoped = TypeBuilder.JoinTokens(head.enumkey()).Contains("class") ||
                            TypeBuilder.JoinTokens(head.enumkey()).Contains("struct"),

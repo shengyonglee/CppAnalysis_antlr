@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CppParser.Models
 {
-    public class CppEnum : CppElement
+    public class CodeEnum : CodeElement
     {
         /// <summary>
         /// 枚举值列表

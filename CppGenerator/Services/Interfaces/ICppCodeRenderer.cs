@@ -12,8 +12,8 @@ namespace CppGenerator.Services
     /// <summary>将模型与模板绑定并渲染为字符串。</summary>
     public interface ICppCodeRenderer
     {
-        RenderResult RenderClass(CppClass model);   // .h + .cpp
-        string RenderEnum(CppEnum model);   // 仅 .h
-        string RenderInterface(CppClass model); // 仅 .h
+        RenderResult RenderClass(CodeClass model);   // .h + .cpp
+        string RenderEnum(CodeEnum model);   // 仅 .h
+        string RenderInterface(CodeClass model); // 仅 .h
     }
 }

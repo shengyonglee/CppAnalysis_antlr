@@ -52,11 +52,11 @@ namespace CppParser.Services
             return parser.translationUnit();
         }
 
-        public CppHeaderFile BuildHeaderModel(string fileName, string source, ParserOptions? options = null)
+        public CodeHeaderFile BuildHeaderModel(string fileName, string source, ParserOptions? options = null)
         {
             var tree = Parse(source, options, out _);
             var builder = new HeaderModelBuilder(fileName);
-            return (builder.Visit(tree) as CppHeaderFile) ?? new CppHeaderFile { FileName = fileName };
+            return (builder.Visit(tree) as CodeHeaderFile) ?? new CodeHeaderFile { FileName = fileName };
         }
     }
 }

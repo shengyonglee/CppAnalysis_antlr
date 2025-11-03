@@ -8,7 +8,7 @@ using CppParser.Enums;
 
 namespace CppParser.Models
 {
-    public abstract class CppRelationship
+    public abstract class CodeRelationship
     {
         /// <summary>
         /// 目标类名
@@ -34,24 +34,24 @@ namespace CppParser.Models
     /// <summary>
     /// 泛化（继承）
     /// </summary>
-    public class CppGeneralization : CppRelationship { } 
+    public class CodeGeneralization : CodeRelationship { } 
 
     /// <summary>
     /// 实现
     /// </summary>
-    public class CppRealization : CppRelationship { }
+    public class CodeRealization : CodeRelationship { }
 
     /// <summary>
     /// 依赖
     /// </summary>
-    public class CppDependency : CppRelationship { }
+    public class CodeDependency : CodeRelationship { }
 
     /// 使用关系
 
     /// <summary>
     /// 关联
     /// </summary>
-    public class CppAssociation : CppRelationship 
+    public class CodeAssociation : CodeRelationship 
     {
         /// <summary>
         /// 可见性
@@ -62,11 +62,11 @@ namespace CppParser.Models
     /// <summary>
     /// 组合
     /// </summary>
-    public class CppComposition : CppRelationship { }
+    public class CodeComposition : CodeRelationship { }
 
     /// <summary>
     /// 聚合
     /// </summary>
-    public class CppAggregation : CppRelationship { }   
+    public class CodeAggregation : CodeRelationship { }   
     
 }

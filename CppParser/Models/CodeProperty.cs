@@ -8,7 +8,7 @@ using System.Xml;
 
 namespace CppParser.Models
 {
-    public class CppProperty : CppElement
+    public class CodeProperty : CodeElement
     {
         /// <summary>
         /// 属性类型  导入导出时记录：基础类型。
@@ -18,7 +18,7 @@ namespace CppParser.Models
         /// <summary>
         /// 属性类型（自定义类型、枚举类型、数据类型） ，
         /// </summary>
-        public string customType { get; set; }
+        public string CustomType { get; set; }
 
         /// <summary>
         /// 多重性，用于记录数组维度（只考虑一维，如果是多维参考rhapsody类型放在customType）

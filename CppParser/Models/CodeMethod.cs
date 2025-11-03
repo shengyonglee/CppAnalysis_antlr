@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CppParser.Models
 {
-    public class CppMethod : CppElement
+    public class CodeMethod : CodeElement
     {
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace CppParser.Models
         /// <summary>
         /// 方法参数列表
         /// </summary>
-        public List<CppMethodParameter> Parameters { get; set; } = new List<CppMethodParameter>();
+        public List<CodeMethodParameter> Parameters { get; set; } = new List<CodeMethodParameter>();
 
         /// <summary>
         /// 方法是否为虚函数

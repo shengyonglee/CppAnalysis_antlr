@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CppParser.Models
 {
-    public class CppHeaderFile
+    public class CodeHeaderFile
     {
         /// <summary>
         /// 文件名
@@ -16,12 +16,12 @@ namespace CppParser.Models
         /// <summary>
         /// 文件中的类列表
         /// </summary>
-        public List<CppClass> Classes { get; set; } = new List<CppClass>();
+        public List<CodeClass> Classes { get; set; } = new List<CodeClass>();
 
         /// <summary>
         /// 文件中的枚举列表
         /// </summary>
-        public List<CppEnum> Enums { get; set; } = new List<CppEnum>();
+        public List<CodeEnum> Enums { get; set; } = new List<CodeEnum>();
         // public List<string> Includes { get; set; } = new List<string>();
     }
 }

@@ -15,19 +15,19 @@ namespace CppGenerator.Services
             _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
         }
 
-        public RenderResult GenerateClass(CppClass model)
+        public RenderResult GenerateClass(CodeClass model)
         {
             var fixedModel = _pre.ProcessClass(model);
             return _renderer.RenderClass(fixedModel);
         }
 
-        public string GenerateEnum(CppEnum model)
+        public string GenerateEnum(CodeEnum model)
         {
             var fixedModel = _pre.ProcessEnum(model);
             return _renderer.RenderEnum(fixedModel);
         }
 
-        public string GenerateInterface(CppClass model)
+        public string GenerateInterface(CodeClass model)
         {
             // 接口仍复用 Class 的预处理（其中对 Interface 做了温和兜底）
             var fixedModel = _pre.ProcessClass(model);

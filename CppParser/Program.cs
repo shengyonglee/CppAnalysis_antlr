@@ -38,7 +38,7 @@ class Program
         }
     }
 
-    static void PrintHeader(CppHeaderFile header)
+    static void PrintHeader(CodeHeaderFile header)
     {
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine($"=== Header: {header.FileName} ===");
@@ -69,7 +69,7 @@ class Program
         }
     }
 
-    static void PrintClass(CppClass c, int indent)
+    static void PrintClass(CodeClass c, int indent)
     {
         var pad = new string(' ', indent * 2);
         Console.ForegroundColor = ConsoleColor.Green;

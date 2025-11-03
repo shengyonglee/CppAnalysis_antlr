@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using CppParser.Enums;
 namespace CppParser.Models
 {
-    public abstract class CppElement
+    public abstract class CodeElement
     {
         /// <summary>
         /// 元素名称
