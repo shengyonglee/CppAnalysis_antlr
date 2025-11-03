@@ -11,9 +11,14 @@ namespace CppParser.Models
     public abstract class CodeRelationship
     {
         /// <summary>
-        /// 目标类名
+        /// 目标名（class、struct、interface类名）
         /// </summary>
-        public string TargetClass { get; set; }
+        public string Target { get; set; }
+
+        /// <summary>
+        /// 目标类型
+        /// </summary>
+        public EnumClassType TargetEnum { get; set; }
 
         /// <summary>
         /// 多重性
