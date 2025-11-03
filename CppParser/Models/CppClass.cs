@@ -17,7 +17,7 @@ namespace CppParser.Models
         public EnumClassType Stereotype { get; set; } = EnumClassType.Class;
 
         /// <summary>
-        /// 类的属性、组合属性、聚合属性、关联属性
+        /// 类的值属性
         /// </summary>
         public List<CppProperty> Properties { get; set; } = new List<CppProperty>();
 
@@ -27,7 +27,7 @@ namespace CppParser.Models
         public List<CppMethod> Methods { get; set; } = new List<CppMethod>();
 
         /// <summary>
-        /// 类内的枚举类型
+        /// 类内的枚举类型（没到用）
         /// </summary>
         public List<CppEnum> Enums { get; set; } = new List<CppEnum>();
 
@@ -35,6 +35,7 @@ namespace CppParser.Models
         /// 继承的父类列表
         /// </summary>
         public List<CppGeneralization> Generalizations { get; set; } = new List<CppGeneralization>();
+
         /// <summary>
         /// 实现的接口列表
         /// </summary>

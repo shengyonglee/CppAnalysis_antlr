@@ -10,24 +10,16 @@ namespace CppParser.Models
     {
 
         /// <summary>
-        /// 方法返回类型
+        /// 方法返回类型(void+基础类型)
         /// </summary>
         public string ReturnType { get; set; }
 
-        /// <summary>
-        /// 方法返回类型是否为指针
-        /// </summary>
-        public bool ReturnTypeIsPointer { get; set; }
 
         /// <summary>
-        /// 方法返回类型是否为引用
+        /// 方法返回类型（自定义类型、枚举类型、数据类型） ，
         /// </summary>
-        public bool ReturnTypeIsReference { get; set; }
+        public string CustomReturnType { get; set; }
 
-        /// <summary>
-        /// 方法返回类型是否为const
-        /// </summary>
-        public bool IsReturnConst { get; set; }
 
         /// <summary>
         /// 方法参数列表
@@ -49,49 +41,5 @@ namespace CppParser.Models
         /// </summary>
         public bool IsStatic { get; set; }
 
-        /// <summary>
-        /// 方法是否为显式构造函数
-        /// </summary>
-        public bool IsExplicit { get; set; }
-
-        /// <summary>
-        /// 方法是否为内联函数
-        /// </summary>
-        public bool IsInline { get; set; }
-
-        /// <summary>
-        /// 方法是否为友元函数
-        /// </summary>
-        public bool IsFriend { get; set; }
-
-        /// <summary>
-        /// 方法是否为constexpr函数
-        /// </summary>
-        public bool IsConstexpr { get; set; }
-
-        /// <summary>
-        /// 方法是否为const成员函数
-        /// </summary>
-        public bool IsConst { get; set; }
-
-        /// <summary>
-        /// 方法是否 = default 实现
-        /// </summary>
-        public bool IsDefaultImplementation { get; set; }
-
-        /// <summary>
-        /// 方法是否 = delete 删除
-        /// </summary>
-        public bool IsDeleted { get; set; }
-
-        /// <summary>
-        /// 方法是否为 override 函数
-        /// </summary>
-        public bool IsOverride { get; set; }
-
-        /// <summary>
-        /// 方法是否为 final 函数
-        /// </summary>
-        public bool IsFinal { get; set; }
     }
 }

@@ -14,12 +14,12 @@ namespace CppParser.Models
         public List<string> Values { get; set; } = new List<string>();
 
         /// <summary>
-        /// 是否为 scoped enum（enum class）
+        /// 是否为 scoped enum（enum class）（没用到）
         /// </summary>
         public bool IsScoped { get; set; }
 
         /// <summary>
-        /// 枚举的底层类型（如有指定int）
+        /// 枚举的底层类型（如有指定int）（没用到）
         /// </summary>
         public string UnderlyingType { get; set; } 
     }

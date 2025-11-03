@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CppParser.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,14 +11,19 @@ namespace CppParser.Models
     public class CppProperty : CppElement
     {
         /// <summary>
-        /// 属性类型
+        /// 属性类型  导入导出时记录：基础类型。
         /// </summary>
         public string Type { get; set; }
 
         /// <summary>
-        /// 完整属性类型
+        /// 属性类型（自定义类型、枚举类型、数据类型） ，
         /// </summary>
-        public string FullType { get; set; } // 包含所有修饰符的完整类型
+        public string customType { get; set; }
+
+        /// <summary>
+        /// 多重性，用于记录数组维度（只考虑一维，如果是多维参考rhapsody类型放在customType）
+        /// </summary>
+        public EnumCppMultiplicity Multiplicity { get; set; }
 
         /// <summary>
         /// 是否为静态属性
@@ -29,59 +35,5 @@ namespace CppParser.Models
         /// </summary>
         public string DefaultValue { get; set; }
 
-        /// <summary>
-        /// 是否为const属性
-        /// </summary>
-        public bool IsConst { get; set; }
-
-        /// <summary>
-        /// 是否为volatile属性
-        /// </summary>
-        public bool IsVolatile { get; set; }
-
-        /// <summary>
-        /// 是否为可变属性
-        /// </summary>
-        public bool IsMutable { get; set; }
-
-        /// <summary>
-        /// 是否为有符号类型
-        /// </summary>
-        public bool IsSigned { get; set; }
-
-        /// <summary>
-        /// 是否为无符号类型
-        /// </summary>
-        public bool IsUnsigned { get; set; }
-
-        /// <summary>
-        /// 是否为短整型
-        /// </summary>
-        public bool IsShort { get; set; }
-
-        /// <summary>
-        /// 是否为长整型
-        /// </summary>
-        public bool IsLong { get; set; }
-
-        /// <summary>
-        /// 是否为指针类型
-        /// </summary>
-        public bool IsPointer { get; set; }
-
-        /// <summary>
-        /// 是否为引用类型
-        /// </summary>
-        public bool IsReference { get; set; }
-
-        /// <summary>
-        /// 是否为数组类型
-        /// </summary>
-        public bool IsArray { get; set; }
-
-        /// <summary>
-        /// 数组大小
-        /// </summary>
-        public string ArraySize { get; set; } // 数组大小
     }
 }

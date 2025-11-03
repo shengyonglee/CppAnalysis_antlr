@@ -46,6 +46,8 @@ namespace CppParser.Models
     /// </summary>
     public class CppDependency : CppRelationship { }
 
+    /// 使用关系
+
     /// <summary>
     /// 关联
     /// </summary>

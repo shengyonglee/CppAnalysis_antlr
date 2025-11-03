@@ -9,8 +9,8 @@ namespace CppParser.Models
     public class CppMethodParameter : CppProperty
     {
         /// <summary>
-        /// 方法参数是否为右值引用
+        /// 参数传递方向，inout.in out。默认inout
         /// </summary>
-        public bool IsRValueReference { get; set; }
+        public string direction { get; set; } = "inout";
     }
 }
