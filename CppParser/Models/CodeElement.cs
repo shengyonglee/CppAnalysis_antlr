@@ -14,8 +14,18 @@ namespace CppParser.Models
         public string Name { get; set; }
 
         /// <summary>
+        /// 元素中文名称/label
+        /// </summary>
+        public string ChineseName { get; set; }
+
+        /// <summary>
         /// 元素可见性，默认为"public"
         /// </summary>
         public EnumVisibility Visibility { get; set; } = EnumVisibility.Public;
+
+        /// <summary>
+        /// 注释信息
+        /// </summary>
+        public string Comment { get; set; }
     }
 }
