@@ -29,8 +29,8 @@ namespace CppGenerator.Services
                 .Concat(model.Compositions);
             foreach (var r in allRels)
             {
-                if (r.Multiplicity == EnumCppMultiplicity.ToFixed && r.FixedSize == null)
-                    r.FixedSize = 1;
+                if (r.TargetMultiplicity == EnumCppMultiplicity.ToFixed && r.TargetFixedSize == null)
+                    r.TargetFixedSize = 1;
             }
 
             if (model.Methods != null)
@@ -83,14 +83,14 @@ namespace CppGenerator.Services
             model.Name = string.IsNullOrWhiteSpace(model.Name) ? "UnnamedEnum" : model.Name.Trim();
 
             // 去重/去空
-            if (model.Values != null)
-            {
-                model.Values = model.Values
-                    .Where(v => !string.IsNullOrWhiteSpace(v))
-                    .Select(v => v.Trim())
-                    .Distinct()
-                    .ToList();
-            }
+            //if (model.Values != null)
+            //{
+            //    model.Values = model.Values
+            //        .Where(v => !string.IsNullOrWhiteSpace(v))
+            //        .Select(v => v.Trim())
+            //        .Distinct()
+            //        .ToList();
+            //}
             return model;
         }
     }

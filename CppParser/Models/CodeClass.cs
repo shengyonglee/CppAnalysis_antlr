@@ -54,7 +54,7 @@ namespace CppParser.Models
         /// <summary>
         /// 类的关联关系
         /// </summary>
-        public List<CodeUnidirectionalAssociation> UnidirectionaAssociations { get; set; } = new List<CodeUnidirectionalAssociation>();
+        public List<CodeUniDirectionalAssociation> UnidirectionalAssociations { get; set; } = new List<CodeUniDirectionalAssociation>();
 
         /// <summary>
         /// 类的组合关系

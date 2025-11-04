@@ -14,7 +14,9 @@
 #include "Address"
 
 // 关联关系
-class Company;
+class Company2;
+class Company3;
+class Company4;
 class Person : public LivingBeing1, public LivingBeing2, public Realization1, public Realization1
 {
 
@@ -24,13 +26,31 @@ public:
     
     virtual ~Person();
 
-    std::string getName();
+	std::string getName();
 
-    void setName(const std::string& v);
+	void setName(const std::string& v);
 
-    static std::string staticfun();
+	static std::string staticfun();
 
-    std::string name1 = "Tom";
+	std::string name1 = "Tom";
+
+	std::string name3[3];
+
+	std::vector<std::string> name4;
+
+	std::vector<std::string> name5;
+
+	static std::string name6;
+
+	Company2* employer1[1];
+
+	std::vector<Company3*> employer2;
+
+	Company4* employer3;
+
+	std::vector<Company5*> employer4;
+
+	Company6* employer5;
 
 private:
 

@@ -53,6 +53,10 @@ namespace CppGenerator
                     new CodeProperty { Name = "name1", Type = "std::string", Visibility = EnumVisibility.Public,  DefaultValue = "\"Tom\"" },
                     new CodeProperty { Name = "age",  Type = "int",          Visibility = EnumVisibility.Private },
                     new CodeProperty { Name = "name2", Type = "std::string", Visibility = EnumVisibility.Private,  DefaultValue = "\"Tom1\"" },
+                    new CodeProperty { Name = "name3", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToFixed ,FixedSize = 3},
+                    new CodeProperty { Name = "name4", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToMany ,DefaultValue = "\"default\""},
+                    new CodeProperty { Name = "name5", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToMany },
+                    new CodeProperty { Name = "name6", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToOne ,IsStatic = true,DefaultValue = "\"default\""},
                 },
                 Methods = new List<CodeMethod>
                 {
@@ -68,26 +72,33 @@ namespace CppGenerator
                 },
                 Generalizations = new List<CodeGeneralization>
                 {
-                    new CodeGeneralization { Target = "LivingBeing1" },
-                    new CodeGeneralization { Target = "LivingBeing2" }
+                    new CodeGeneralization { TargetName = "LivingBeing1" },
+                    new CodeGeneralization { TargetName = "LivingBeing2" }
                 },
 
                 Realizations = new List<CodeRealization>
                 {
-                    new CodeRealization { Target = "Realization1" },
-                    new CodeRealization { Target = "Realization1" }
+                    new CodeRealization { TargetName = "Realization1" },
+                    new CodeRealization { TargetName = "Realization1" }
                 },
 
                 Aggregations = new List<CodeAggregation>
                 {
-                    new CodeAggregation {Target = "Address", Multiplicity = EnumCppMultiplicity.ToMany }
+                    new CodeAggregation {TargetName = "Address", TargetMultiplicity = EnumCppMultiplicity.ToMany }
                 },
 
                 Associations = new List<CodeAssociation>
                 {
-                    new CodeAssociation {Target = "Company", Multiplicity = EnumCppMultiplicity.ToFixed, FixedSize=1, RoleName="employer", Visibility= EnumVisibility.Public }
-                }
+                    new CodeAssociation {TargetName = "Company2", TargetMultiplicity = EnumCppMultiplicity.ToFixed, TargetFixedSize=1, TargetRoleName="employer1", Visibility= EnumVisibility.Public },
+                    new CodeAssociation {TargetName = "Company3", TargetMultiplicity = EnumCppMultiplicity.ToMany, TargetRoleName="employer2", Visibility= EnumVisibility.Public },
+                    new CodeAssociation {TargetName = "Company4", TargetMultiplicity = EnumCppMultiplicity.ToOne, TargetRoleName="employer3", Visibility= EnumVisibility.Public },
+                },
 
+                UnidirectionalAssociations = new List<CodeUniDirectionalAssociation>
+                {
+                    new CodeUniDirectionalAssociation {TargetName = "Company5", TargetMultiplicity = EnumCppMultiplicity.ToMany, TargetRoleName="employer4", Visibility= EnumVisibility.Public },
+                    new CodeUniDirectionalAssociation {TargetName = "Company6", TargetMultiplicity = EnumCppMultiplicity.ToOne, TargetRoleName="employer5", Visibility= EnumVisibility.Public },
+                }
 
 
             };
@@ -109,7 +120,12 @@ namespace CppGenerator
                 Name = "Color",
                 IsScoped = true, // enum class
                 // UnderlyingType = "uint8_t",  // 如需要可指定底层类型
-                Values = new List<string> { "Red", "Green", "Blue" }
+                Values = new Dictionary<string, string>
+                {
+                    { "Red",   "红色" },
+                    { "Green", "绿色" },
+                    { "Blue",  "蓝色" }
+                }
             };
 
             string enumHeader = generator.GenerateEnum(cppEnum);

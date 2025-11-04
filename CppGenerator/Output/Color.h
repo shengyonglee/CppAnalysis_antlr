@@ -3,10 +3,9 @@
 
 enum class Color
 {
-	Red,
-	Green,
-	Blue,
-	black,
+  {Key: "Red", Value: "红色"},
+  {Key: "Green", Value: "绿色"},
+  {Key: "Blue", Value: "蓝色"}
 };
 
 #endif

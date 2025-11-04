@@ -77,7 +77,7 @@ namespace CppParser.Services
                     var gen = new CodeGeneralization
                     {
                         // 模型里最关键的是目标类型；其余字段（Multiplicity/RoleName等）此处不设置，保持原逻辑不变
-                        Target = name
+                        TargetName = name
                     };
                     cls.Generalizations.Add(gen);
                 }
@@ -140,7 +140,7 @@ namespace CppParser.Services
                 foreach (var def in list.enumeratorDefinition())
                 {
                     var id = def.enumerator().Identifier()?.GetText();
-                    if (!string.IsNullOrEmpty(id)) e.Values.Add(id!);
+                    //if (!string.IsNullOrEmpty(id)) e.Values.Add(id!);
                 }
             }
 

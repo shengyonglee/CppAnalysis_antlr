@@ -29,7 +29,7 @@
 {{- if c.Generalizations != null && c.Generalizations.size > 0 }}
 // 泛化关系
 {{- for d in c.Generalizations }}
-#include "{{ d.Target }}"
+#include "{{ d.TargetName }}"
 {{- end }}
 {{- end }}
 
@@ -37,7 +37,7 @@
 {{- if c.Realizations != null && c.Realizations.size > 0 }}
 // 实现关系
 {{- for d in c.Realizations }}
-#include "{{ d.Target }}"
+#include "{{ d.TargetName }}"
 {{- end }}
 {{- end }}
 
@@ -45,7 +45,7 @@
 {{- if c.Dependencies != null && c.Dependencies.size > 0 }}
 // 依赖关系
 {{- for d in c.Dependencies }}
-#include "{{ d.Target }}"
+#include "{{ d.TargetName }}"
 {{- end }}
 {{- end }}
 
@@ -53,7 +53,7 @@
 {{- if c.Compositions != null && c.Compositions.size > 0 }}
 // 组合关系
 {{- for d in c.Compositions }}
-#include "{{ d.Target }}"
+#include "{{ d.TargetName }}"
 {{- end }}
 {{- end }}
 
@@ -61,7 +61,7 @@
 {{- if c.Aggregations != null && c.Aggregations.size > 0 }}
 // 聚合关系
 {{- for d in c.Aggregations }}
-#include "{{ d.Target }}"
+#include "{{ d.TargetName }}"
 {{- end }}
 {{- end }}
 
@@ -74,7 +74,16 @@
 {{- for a in c.Associations }}
 {{- # 定义类型变量 -}}
 {{- target_type = c.Associations.TargetEnum == $TYPE_STRUCT ? "struct" : "class" }}
-{{ target_type }} {{ a.Target }};
+{{ target_type }} {{ a.TargetName }};
+{{- end }}
+{{- end }}
+
+{{- if c.UniDirectionalAssociations != null && c.UniDirectionalAssociations.size > 0 }}
+// 单向关联关系
+{{- for a in c.UniDirectionalAssociations }}
+{{- # 定义类型变量 -}}
+{{- target_type = c.UniDirectionalAssociations.TargetEnum == $TYPE_STRUCT ? "struct" : "class" }}
+{{ target_type }} {{ a.TargetName }};
 {{- end }}
 {{- end }}
 
@@ -89,7 +98,7 @@
 {{- end -}}
 
 {{- "\n" -}}
-class {{ c.Name }}{{ if all_base_classes.size > 0 }} : {{ for base in all_base_classes }}{{ if !for.first }}, {{ end }}public {{ base.Target }}{{ end }}{{ end }}
+class {{ c.Name }}{{ if all_base_classes.size > 0 }} : {{ for base in all_base_classes }}{{ if !for.first }}, {{ end }}public {{ base.TargetName }}{{ end }}{{ end }}
 {
 
 {{- if HAS_PUBLICSECTION }}
@@ -101,149 +110,124 @@ public:
     
     virtual ~{{ c.Name }}();            
 
-    {{- # 非静态成员函数（public） -}}
-    {{- if c.Methods != null && c.Methods.size > 0 }}
-    {{- for m in c.Methods }}
-    {{- $is_public = (m.Visibility == $VIS_PUBLIC) }}
-    {{- $is_static = (m.IsStatic == true) }}
-    {{- if $is_public  && !$is_static }}
-    {{- "\n" -}}
-    {{- returntype = m.ReturnType != null ? m.ReturnType : m.CustomReturnType }}
-    {{ returntype }} {{ m.Name }}(
-        {{- if m.Parameters != null && m.Parameters.size > 0 }}
-            {{- for p in m.Parameters }}
+    {{- # ===== 公有成员函数（合并静态/非静态） ===== -}}
+    {{- if c.Methods != null && c.Methods.size > 0 -}}
+    {{- for m in c.Methods -}}
+        {{- if m.Visibility == $VIS_PUBLIC -}}
+        {{- "\n" -}}
+        {{- returntype = (m.ReturnType != null) ? m.ReturnType : m.CustomReturnType -}}
+        {{- "\n\t" -}}
+        {{- if m.IsStatic == true }}static {{ end }}{{ returntype }} {{ m.Name }}(
+            {{- if m.Parameters != null && m.Parameters.size > 0 -}}
+            {{- for p in m.Parameters -}}
                 {{- if !for.first }}, {{ end -}}
-                {{ p.Type }} {{ p.Name }}
-            {{- end }}
-        {{- end }});
-    {{- end }}
-    {{- end }}
-    {{- end }}
+                {{- ptype = (p.Type != null) ? p.Type : p.CustomType -}}
+                {{ ptype }} {{ p.Name }}
+            {{- end -}}
+            {{- end -}}
+        );
+        {{- end -}}
+    {{- end -}}
+    {{- end -}}
 
-    {{- # 静态成员函数（public） -}}
-    {{- if c.Methods != null && c.Methods.size > 0 }}
-    {{- for m in c.Methods }}
-    {{- $is_public = (m.Visibility == $VIS_PUBLIC) }}
-    {{- $is_static = (m.IsStatic == true) }}
-    {{- if $is_public  && $is_static }}
-    {{- "\n" -}}
-    {{- returntype = m.ReturnType != null ? m.ReturnType : m.CustomReturnType }}
-    static {{ returntype }} {{ m.Name }}(
-        {{- if m.Parameters != null && m.Parameters.size > 0 }}
-            {{- for p in m.Parameters }}
-                {{- if !for.first }}, {{ end -}}
-                {{ p.Type }} {{ p.Name }}
-            {{- end }}
-        {{- end }});
-    {{- end }}
-    {{- end }}
-    {{- end }}
 
-    {{- # 成员变量（public） -}}
-    {{- if c.Properties != null && c.Properties.size > 0 }}
-    {{- for p in c.Properties }}
-    {{- if p.Visibility == $VIS_PUBLIC }}
-    {{- "\n" }}
-    {{ if p.IsStatic == true }}static {{ end }}{{- p.Type }} {{ p.Name }}
-        {{- if (p.IsStatic != true) && (p.DefaultValue != null) && (p.DefaultValue != "") }}
-        {{- " = " }}{{- p.DefaultValue  }}
-        {{- end }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
+    {{- # ====== 成员变量（public） ====== -}}
+    {{- if c.Properties != null && c.Properties.size > 0 -}}
+    {{- for p in c.Properties -}}
+        {{- if p.Visibility == $VIS_PUBLIC -}}
+        {{- "\n" -}}
 
-    {{- # 关系作为成员变量 -}}
-    {{- if c.Associations != null && c.Associations.size > 0 }}
-    {{- for a in c.Associations }}
-    {{- if a != null && a.TargetClass != null && a.Visibility == $VIS_PUBLIC }}
-    {{- if a.Multiplicity == $MULT_TO_ONE }}
-    {{- "\n" }}
-    {{ a.TargetClass }}* p{{ a.RoleName }};
-    {{- else if a.Multiplicity == $MULT_FIXED }}
-    {{- "\n" }}
-    {{ a.TargetClass }} {{ a.RoleName }}[{{ if a.FixedSize != null }}{{ a.FixedSize }}{{ else }}1{{ end }}];
-    {{- else if a.Multiplicity == $MULT_MANY }}
-    {{- "\n" }}
-    std::vector<{{ a.TargetClass }}*> {{ a.RoleName }};
+        {{- # ---- ToOne：单对象 ---- -}}
+        {{- if p.Multiplicity == $MULT_TO_ONE -}}
+            {{- "\n\t" -}}
+            {{- ptype = (p.Type != null) ? p.Type : p.CustomType -}}
+            {{- if p.IsStatic == true -}}
+                static {{ ptype }} {{ p.Name }};
+            {{- else -}}
+                {{ ptype }} {{ p.Name }}{{ if p.DefaultValue != null && p.DefaultValue != "" }} = {{ p.DefaultValue }}{{ end }};
+            {{- end -}}
+
+        {{- # ---- ToFixed：固定长度数组 ---- -}}
+        {{- else if p.Multiplicity == $MULT_FIXED -}}
+            {{- $n = (p.FixedSize != null) ? p.FixedSize : 1 -}}
+            {{- "\n\t" -}}
+            {{- ptype = (p.Type != null) ? p.Type : p.CustomType -}}
+            {{- if p.IsStatic == true -}}
+                static {{ ptype }} {{ p.Name }}[{{ $n }}];
+            {{- else -}}
+                {{ ptype }} {{ p.Name }}[{{ $n }}];
+            {{- end -}}
+
+        {{- # ---- ToMany：可变多重 -> vector ---- -}}
+        {{- else if p.Multiplicity == $MULT_MANY -}}
+            {{- "\n\t" -}}
+            {{- ptype = (p.Type != null) ? p.Type : p.CustomType -}}
+            {{- if p.IsStatic == true -}}
+                static std::vector<{{ ptype }}> {{ p.Name }};
+            {{- else -}}
+                std::vector<{{ ptype }}> {{ p.Name }};
+            {{- end -}}
+
+        {{- # ---- 未标注多重性（兜底按 ToOne） ---- -}}
+        {{- else -}}
+            {{- "\n\t" -}}
+            {{- ptype = (p.Type != null) ? p.Type : p.CustomType -}}
+            {{- if p.IsStatic == true -}}
+                static {{ ptype }} {{ p.Name }};
+            {{- else -}}
+                {{ ptype }} {{ p.Name }}{{ if p.DefaultValue != null && p.DefaultValue != "" }} = {{ p.DefaultValue }}{{ end }};
+            {{- end -}}
+        {{- end -}}
+
+        {{- end -}}
+    {{- end -}}
+    {{- end -}}
+
+    {{- # 合并关联关系和单向关联关系 -}}
+    {{- all_Associations = [] }}
+    {{- if c.Associations != null }}
+    {{-   all_Associations = all_Associations | array.add_range c.Associations }}
     {{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
+    {{- if c.UnidirectionalAssociations != null }}
+    {{-   all_Associations = all_Associations | array.add_range c.UnidirectionalAssociations }}
+    {{- end -}}
+
+    {{- # ============ 关联和单向关联作为成员变量（public） ============ -}}
+    {{- if all_Associations != null && all_Associations.size > 0 -}}
+    {{- for a in all_Associations -}}
+        {{- if a != null && a.TargetName != null && a.Visibility == $VIS_PUBLIC -}}
+        {{- "\n" -}}
+        {{- # 角色名兜底：优先用 TargetRoleName；没有就用 TargetName 名 -}}
+        {{- $role_raw  = (a.TargetRoleName != null && a.TargetRoleName != "") ? a.TargetRoleName : a.TargetName -}}
+
+        {{- if a.TargetMultiplicity == $MULT_TO_ONE -}}
+            {{- "\n\t" -}}
+            {{ a.TargetName }}* {{ $role_raw }};
+
+        {{- else if a.TargetMultiplicity == $MULT_FIXED -}}
+            {{- "\n\t" -}}
+            {{- $n = (a.FixedSize != null) ? a.FixedSize : 1 -}}    
+            {{ a.TargetName }}* {{ $role_raw }}[{{ $n }}];
+
+        {{- else if a.TargetMultiplicity == $MULT_MANY -}}
+            {{- "\n\t" -}}
+            std::vector<{{ a.TargetName }}*> {{ $role_raw }};
+
+        {{- else -}}
+            {{- "\n\t" -}}
+            {{- # 未标注多重性：兜底按 ToOne 指针 -}}
+            {{ a.TargetName }}* {{ $role_raw }};
+        {{- end -}}
+
+        {{- end -}}
+    {{- end -}}
+    {{- end -}}
+
 {{- end }}
 
 {{- if HAS_PROTECTEDSECTION }}
 
 protected:
-    {{- # —— protected 区 —— -}}
-
-    {{- # 非静态成员函数（protected） -}}
-    {{- if c.Methods != null && c.Methods.size > 0 }}
-    {{- for m in c.Methods }}
-    {{- $is_protected = (m.Visibility == $VIS_PROTECTED) -}}
-    {{- $is_ctor      = (m.Name == c.Name) -}}
-    {{- $is_dtor      = string.starts_with m.Name "~" -}}
-    {{- $is_static    = (m.IsStatic == true) -}}
-    {{- if $is_protected && !$is_ctor && !$is_dtor && !$is_static }}
-    {{- "\n" }}
-    {{ m.ReturnType }} {{ m.Name }}(
-        {{- if m.Parameters != null && m.Parameters.size > 0 -}}
-            {{- for p in m.Parameters -}}
-                {{- if !for.first }}, {{ end -}}
-                {{ p.Type }} {{ p.Name }}
-            {{- end -}}
-        {{- end -}}
-    ){{ if m.IsConst == true }} const{{ end }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
-
-    {{- # 静态成员函数（protected） -}}
-    {{ if c.Methods != null && c.Methods.size > 0 }}
-    {{- for m in c.Methods }}
-    {{- if (m.Visibility == $VIS_PROTECTED) && (m.IsStatic == true) && (m.Name != c.Name) && (!string.starts_with m.Name "~") }}
-    {{- "\n" }}
-    {{ m.ReturnType }} {{ m.Name }}(
-        {{- if m.Parameters != null && m.Parameters.size > 0 -}}
-            {{- for p in m.Parameters -}}
-                {{- if !for.first }}, {{ end -}}
-                {{ p.Type }} {{ p.Name }}
-            {{- end -}}
-        {{- end -}}
-    );
-    {{- end }}
-    {{- end }}
-    {{- end }}
-
-    {{- # 成员变量（protected） -}}
-    {{- if c.Properties != null && c.Properties.size > 0 }}
-    {{- for p in c.Properties }}
-    {{- if p.Visibility == $VIS_PROTECTED }}
-    {{- "\n" }}
-    {{ if p.IsStatic == true }}static {{ end }}{{- p.Type }} {{ p.Name }}
-        {{- if (p.IsStatic != true) && (p.DefaultValue != null) && (p.DefaultValue != "") }}
-        {{- " = " }}{{- p.DefaultValue  }}
-        {{- end }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
-
-    {{- # 关系作为成员变量 -}}
-    {{- if c.Associations != null && c.Associations.size > 0 }}
-    {{- for a in c.Associations }}
-    {{- if a != null && a.TargetClass != null && a.Visibility == $VIS_PROTECTED }}
-    {{- if a.Multiplicity == $MULT_TO_ONE }}
-    {{- "\n" }}
-    {{ a.TargetClass }}* p{{ a.RoleName }};
-    {{- else if a.Multiplicity == $MULT_FIXED }}
-    {{- "\n" }}
-    {{ a.TargetClass }} {{ a.RoleName }}[{{ if a.FixedSize != null }}{{ a.FixedSize }}{{ else }}1{{ end }}];
-    {{- else if a.Multiplicity == $MULT_MANY }}
-    {{- "\n" }}
-    std::vector<{{ a.TargetClass }}*> {{ a.RoleName }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
 
 {{- end }}
 
@@ -251,110 +235,7 @@ protected:
 {{- if HAS_PRIVATESECTION }}
 
 private:
-    {{- # —— private 区 —— -}}
-
-    {{- # 非静态成员函数（private） -}}
-    {{- if c.Methods != null && c.Methods.size > 0 }}
-    {{- for m in c.Methods }}
-    {{- $is_private = (m.Visibility == $VIS_PRIVATE) -}}
-    {{- $is_ctor    = (m.Name == c.Name) -}}
-    {{- $is_dtor    = string.starts_with m.Name "~" -}}
-    {{- $is_static  = (m.IsStatic == true) -}}
-    {{- if $is_private && !$is_ctor && !$is_dtor && !$is_static }}
-    {{- "\n" }}
-    {{ m.ReturnType }} {{ m.Name }}(
-        {{- if m.Parameters != null && m.Parameters.size > 0 -}}
-            {{- for p in m.Parameters -}}
-                {{- if !for.first }}, {{ end -}}
-                {{ p.Type }} {{ p.Name }}
-            {{- end -}}
-        {{- end -}}
-    ){{- if m.IsConst == true }} const{{ end }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
-
-    {{- # 静态成员函数（private） -}}
-    {{- if c.Methods != null && c.Methods.size > 0 }}
-    {{- for m in c.Methods }}
-    {{- if (m.Visibility == $VIS_PRIVATE) && (m.IsStatic == true) && (m.Name != c.Name) && (!string.starts_with m.Name "~") }}
-    {{- "\n" }}
-    {{ m.ReturnType }} {{ m.Name }}(
-        {{- if m.Parameters != null && m.Parameters.size > 0 -}}
-            {{- for p in m.Parameters -}}
-                {{- if !for.first }}, {{ end -}}
-                {{ p.Type }} {{ p.Name }}
-            {{- end -}}
-        {{- end -}}
-    );
-    {{- end }}
-    {{- end }}
-    {{- end }}
-
-    {{- # 成员变量（private） -}}
-    {{- if c.Properties != null && c.Properties.size > 0 }}
-    {{- for p in c.Properties }}
-    {{- if p.Visibility == $VIS_PRIVATE }}
-    {{- "\n" }}
-    {{ if p.IsStatic == true }}static {{ end }}{{- p.Type }} {{ p.Name }}
-        {{- if (p.IsStatic != true) && (p.DefaultValue != null) && (p.DefaultValue != "") }}
-        {{- " = " }}{{- p.DefaultValue  }}
-        {{- end }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
-
-    {{- # 关系作为成员变量 -}}
-    {{- if c.Associations != null && c.Associations.size > 0 }}
-    {{- for a in c.Associations }}
-    {{- if a != null && a.TargetClass != null && a.Visibility == $VIS_PRIVATE }}
-    {{- if a.Multiplicity == $MULT_TO_ONE }}
-    {{- "\n" }}
-    {{ a.TargetClass }}* p{{ a.RoleName }};
-    {{- else if a.Multiplicity == $MULT_FIXED }}
-    {{- "\n" }}
-    {{ a.TargetClass }} {{ a.RoleName }}[{{ if a.FixedSize != null }}{{ a.FixedSize }}{{ else }}1{{ end }}];
-    {{- else if a.Multiplicity == $MULT_MANY }}
-    {{- "\n" }}
-    std::vector<{{ a.TargetClass }}*> {{ a.RoleName }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
-
-    {{- if c.Compositions != null && c.Compositions.size > 0 }}
-    {{- for x in c.Compositions }}
-    {{- if x != null && x.TargetClass != null }}
-    {{- if x.Multiplicity == $MULT_TO_ONE }}
-    {{- "\n" }}
-    {{ x.TargetClass }} {{ x.RoleName }};
-    {{- else if x.Multiplicity == $MULT_FIXED }}
-    {{- "\n" }}
-    {{ x.TargetClass }} {{ x.RoleName }}[{{ if x.FixedSize != null }}{{ x.FixedSize }}{{ else }}1{{ end }}];
-    {{- else if x.Multiplicity == $MULT_MANY }}
-    {{- "\n" }}
-    std::vector<{{ x.TargetClass }}> {{ x.RoleName }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
-
-    {{- if c.Aggregations != null && c.Aggregations.size > 0 }}
-    {{- for x in c.Aggregations }}
-    {{- if x != null && x.TargetClass != null }}
-    {{- if x.Multiplicity == $MULT_TO_ONE }}
-    {{- "\n" }}
-    {{ x.TargetClass }} {{ x.RoleName }};
-    {{- else if x.Multiplicity == $MULT_FIXED }}
-    {{- "\n" }}
-    {{ x.TargetClass }} {{ x.RoleName }}[{{ if x.FixedSize != null }}{{ x.FixedSize }}{{ else }}1{{ end }}];
-    {{- else if x.Multiplicity == $MULT_MANY }}
-    {{- "\n" }}
-    std::vector<{{ x.TargetClass }}> {{ x.RoleName }};
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
+  
 {{- end }}
 
 };

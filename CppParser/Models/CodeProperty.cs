@@ -31,6 +31,11 @@ namespace CppParser.Models
         public string MarkMultiplicity { get; set; }
 
         /// <summary>
+        /// 多重性固定大小（如有的话）
+        /// </summary>
+        public int? FixedSize { get; set; }
+
+        /// <summary>
         /// 是否为静态属性
         /// </summary>
         public bool IsStatic { get; set; }

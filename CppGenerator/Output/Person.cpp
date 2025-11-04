@@ -21,3 +21,4 @@ std::string Person::staticfun()
 }
 
 
+std::string Person::name6 = "default";

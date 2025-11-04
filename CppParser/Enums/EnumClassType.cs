@@ -31,6 +31,11 @@ namespace CppParser.Enums
         /// <summary>
         /// 抽象类
         /// </summary>
-        AbstractClass
+        AbstractClass,
+
+        /// <summary>
+        /// 枚举，只在处理关系的时候用到
+        /// </summary>
+        Enum,
     }
 }

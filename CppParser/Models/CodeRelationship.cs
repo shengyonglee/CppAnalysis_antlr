@@ -13,17 +13,22 @@ namespace CppParser.Models
         /// <summary>
         /// 源名（class、struct、interface类名）
         /// </summary>
-        public string Source { get; set; }
+        public string SourceName { get; set; }
+
+        /// <summary>
+        /// 源类型
+        /// </summary>
+        public EnumClassType SourceStereotype { get; set; }
 
         /// <summary>
         /// 目标名（class、struct、interface类名）
         /// </summary>
-        public string Target { get; set; }
+        public string TargetName { get; set; }
 
         /// <summary>
         /// 目标类型
         /// </summary>
-        public EnumClassType TargetEnum { get; set; }
+        public EnumClassType TargetStereotype { get; set; }
 
         /// <summary>
         /// source多重性
@@ -53,7 +58,7 @@ namespace CppParser.Models
         /// <summary>
         /// target多重性固定大小（如有的话）
         /// </summary>
-        public int? targetFixedSize { get; set; }
+        public int? TargetFixedSize { get; set; }
 
         /// <summary>
         /// source成员名
@@ -98,7 +103,7 @@ namespace CppParser.Models
     /// <summary>
     /// 单向关联
     /// </summary>
-    public class CodeUnidirectionalAssociation : CodeRelationship
+    public class CodeUniDirectionalAssociation : CodeRelationship
     {
         /// <summary>
         /// 可见性
