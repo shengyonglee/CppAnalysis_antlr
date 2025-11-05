@@ -22,18 +22,14 @@ namespace CppParser.Models
 
         /// <summary>
         /// 多重性，用于记录数组维度（只考虑一维，如果是多维参考rhapsody类型放在customType）
+        /// 记录为（下限，上限），如（0，*）表示0到多；（1，1）表示单值
         /// </summary>
-        public EnumCppMultiplicity Multiplicity { get; set; }
+        public Tuple<string, string> Multiplicity { get; set; }
 
         /// <summary>
         /// 记录原型中多重性的字符串表示
         /// </summary>
         public string MarkMultiplicity { get; set; }
-
-        /// <summary>
-        /// 多重性固定大小（如有的话）
-        /// </summary>
-        public int? FixedSize { get; set; }
 
         /// <summary>
         /// 是否为静态属性

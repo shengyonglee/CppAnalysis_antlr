@@ -55,8 +55,11 @@ namespace CppGenerator
                     new CodeProperty { Name = "name2", Type = "std::string", Visibility = EnumVisibility.Private,  DefaultValue = "\"Tom1\"" },
                     new CodeProperty { Name = "name3", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToFixed ,FixedSize = 3},
                     new CodeProperty { Name = "name4", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToMany ,DefaultValue = "\"default\""},
-                    new CodeProperty { Name = "name5", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToMany },
-                    new CodeProperty { Name = "name6", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToOne ,IsStatic = true,DefaultValue = "\"default\""},
+                    new CodeProperty { Name = "name5", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToMany, IsStatic = true, DefaultValue = "\"default\""},
+
+                    new CodeProperty { Name = "name6", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToOne ,IsStatic = true, DefaultValue = "\"default\""},
+                    new CodeProperty { Name = "name7", Type = "std::string", Visibility = EnumVisibility.Public,  Multiplicity = EnumCppMultiplicity.ToFixed,FixedSize = 3, IsStatic = true, DefaultValue = "\"default\""},
+
                 },
                 Methods = new List<CodeMethod>
                 {
@@ -68,6 +71,10 @@ namespace CppGenerator
                         }
                     },
                     new CodeMethod { Name = "staticfun", ReturnType = "std::string", Visibility = EnumVisibility.Public , IsStatic = true},
+                    new CodeMethod { Name = "vfun", ReturnType = "std::string", Visibility = EnumVisibility.Public , IsPureVirtual = true},
+
+
+
 
                 },
                 Generalizations = new List<CodeGeneralization>

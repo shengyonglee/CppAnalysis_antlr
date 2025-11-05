@@ -14,9 +14,9 @@ public:
     
     virtual ~IShape();
 
-    double Area() = 0;
+	virtual double Area() = 0;
 
-    double Perimeter() = 0;
+	virtual double Perimeter() = 0;
 
 };
 

@@ -26,7 +26,7 @@ namespace CppParser.Enums
         /// <summary>
         /// 多重（0..* 或 1..*）
         /// </summary>
-        ToMany
+        ToMany,
 
     }
 

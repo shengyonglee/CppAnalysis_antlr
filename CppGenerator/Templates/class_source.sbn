@@ -1,28 +1,81 @@
 ﻿#include "{{ c.Name }}.h"
 
+{{- "\n" -}}
+{{- # === 关联关系 === -}}
+{{- if c.Associations != null && c.Associations.size > 0 }}
+// 关联关系
+{{- for a in c.Associations }}
+#include "{{ a.TargetName }}.h"
+{{- end }}
+{{- end }}
+
+{{- if c.UniDirectionalAssociations != null && c.UniDirectionalAssociations.size > 0 }}
+// 单向关联关系
+{{- for a in c.UniDirectionalAssociations }}
+#include "{{ a.TargetName }}.h"
+{{- end }}
+{{- end }}
+
+{{- "\n\n" -}}
+{{- # === 构造函数和析构函数 === -}}
 {{ c.Name }}::{{ c.Name }}()
 {
+
 }
 
 {{ c.Name }}::~{{ c.Name }}()
 {
+
 }
 
-{{- "\n" -}}
+{{- # === 成员函数实现 === -}}
 {{- if c.Methods != null && c.Methods.size > 0 }}
 {{- for m in c.Methods }}
-{{- "\n" -}}
-{{ m.ReturnType }} {{ c.Name }}::{{ m.Name }}({{ if m.Parameters != null && m.Parameters.size > 0 }}{{ for p in m.Parameters }}{{ if !for.first }}, {{ end }}{{ p.Type }} {{ p.Name }}{{ end }}{{ end }})
-{
-}
-{{ end }}
-{{ end }}
+{{- # 纯虚函数不需要在源文件中实现 -}}
+{{- if m.IsPureVirtual != true }}
+{{- "\n\n" -}}
+{{- # 处理返回类型 -}}
+{{- returntype = (m.ReturnType != null) ? m.ReturnType : m.CustomReturnType -}}
+{{- if returntype == null || returntype == "" -}}
+{{-   returntype = "void" -}}
+{{- end -}}
 
-{{- # 静态数据成员定义（类外） -}}
-{{- if c.Properties != null && c.Properties.size > 0 }}
-  {{- for p in c.Properties }}
-    {{- if p.IsStatic == true }}
-{{ p.Type }} {{ c.Name }}::{{ p.Name }}{{ if (p.DefaultValue != null) && (p.DefaultValue != "") }} = {{ p.DefaultValue }}{{ end }};
-    {{- end }}
-  {{- end }}
+{{ returntype }} {{ c.Name }}::{{ m.Name }}({{ if m.Parameters != null && m.Parameters.size > 0 }}{{ for p in m.Parameters }}{{ if !for.first }}, {{ end }}{{ ptype = (p.Type != null) ? p.Type : p.CustomType }}{{ ptype }} {{ p.Name }}{{ end }}{{ end }})
+{
+
+}
+
 {{- end }}
+{{- end }}
+{{- end }}
+
+{{- # === 静态数据成员定义（类外） === -}}
+{{- if c.Properties != null && c.Properties.size > 0 }}
+{{- for p in c.Properties }}
+    {{- if p.IsStatic == true }}
+        {{- "\n\n" -}}
+        {{- # 处理类型 -}}
+        {{- ptype = (p.Type != null) ? p.Type : p.CustomType -}}
+        
+        {{- # 根据多重性处理不同的初始化方式 -}}
+        {{- if p.Multiplicity == 1 || p.Multiplicity == null || p.Multiplicity == 0 -}}
+            {{- # ToOne：单对象 -}}
+            {{ ptype }} {{ c.Name }}::{{ p.Name }}{{ if p.DefaultValue != null && p.DefaultValue != "" }} = {{ p.DefaultValue }}{{ end }};
+        
+        {{- else if p.Multiplicity == 2 -}}
+            {{- # ToFixed：固定长度数组 -}}
+            {{- $n = (p.FixedSize != null) ? p.FixedSize : 1 -}}
+            {{ ptype }} {{ c.Name }}::{{ p.Name }}[{{ $n }}] ;
+        
+        {{- else if p.Multiplicity == 3 -}}
+            {{- # ToMany：可变多重 -> vector -}}
+            std::vector<{{ ptype }}> {{ c.Name }}::{{ p.Name }};
+        
+        {{- else -}}
+            {{- # 默认情况 -}}
+            {{ ptype }} {{ c.Name }}::{{ p.Name }}{{ if p.DefaultValue != null && p.DefaultValue != "" }} = {{ p.DefaultValue }}{{ end }};
+        {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
+

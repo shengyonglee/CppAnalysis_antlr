@@ -26,21 +26,17 @@ public:
     
     virtual ~Person();
 
-	std::string getName();
-
-	void setName(const std::string& v);
-
-	static std::string staticfun();
-
 	std::string name1 = "Tom";
 
 	std::string name3[3];
 
 	std::vector<std::string> name4;
 
-	std::vector<std::string> name5;
+	static std::vector<std::string> name5;
 
 	static std::string name6;
+
+	static std::string name7[3];
 
 	Company2* employer1[1];
 
@@ -52,11 +48,23 @@ public:
 
 	Company6* employer5;
 
+
+	int a[0];
+	int a[1];
+	vector<int> a;
+	int a;
+	vector<int> a;
+	vector<int> a;
+	// fixed = 4
+	int a[4];
+
+
+
 private:
 
-    int age;
+	int age;
 
-    std::string name2 = "Tom1";
+	std::string name2 = "Tom1";
 
 };
 
