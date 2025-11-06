@@ -9,13 +9,37 @@ using CppParser.Models;
 
 namespace CppGenerator.Services
 {
-    /// <summary>将模型与模板绑定并渲染为字符串。</summary>
+    /// <summary>
+    /// C++ 代码渲染器接口
+    /// </summary>
     public interface ICppCodeRenderer
     {
-        RenderResult RenderClass(CodeClass model);   // .h + .cpp
-        string RenderEnum(CodeEnum model);   // 仅 .h
-        string RenderInterface(CodeClass model); // 仅 .h
-        string RenderStruct(CodeClass model); // 仅 .h
+        /// <summary>
+        /// 渲染类代码
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        RenderResult RenderClass(CodeClass model);
 
+        /// <summary>
+        /// 渲染枚举代码
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        string RenderEnum(CodeEnum model);
+
+        /// <summary>
+        /// 渲染接口代码
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        string RenderInterface(CodeClass model);
+
+        /// <summary>
+        /// 渲染结构体代码
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        string RenderStruct(CodeClass model); 
     }
 }

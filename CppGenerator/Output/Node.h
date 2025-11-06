@@ -24,10 +24,16 @@ class Node
 {
 
 public:
-
-    Node(); 
-    
-    virtual ~Node();
+	
+	/**
+	* @brief 默认构造函数
+	*/
+	Node();
+	
+	/**
+	* @brief 默认析构函数
+	*/
+	virtual ~Node();
 	
 	/**
 	* @brief 

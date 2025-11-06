@@ -5,7 +5,9 @@ using CppParser.Enums;
 
 namespace CppGenerator.Services
 {
-    /// <summary>用 Scriban 渲染类/枚举/接口，返回字符串。</summary>
+    /// <summary>
+    /// C++ 代码渲染器实现
+    /// </summary>
     public sealed class CppCodeRenderer : ICppCodeRenderer
     {
         private readonly ICppTemplateProvider _provider;
@@ -37,7 +39,11 @@ namespace CppGenerator.Services
             return _provider.GetStructHeaderTemplate().Render(tctx);
         }
 
-        // ===== helpers =====
+        /// <summary>
+        /// 为类创建模板上下文
+        /// </summary>
+        /// <param name="c"></param>
+        /// <returns></returns>
         private static TemplateContext CreateContextForClass(CodeClass c)
         {
             var tctx = new TemplateContext { MemberRenamer = m => m.Name };
@@ -78,11 +84,15 @@ namespace CppGenerator.Services
             g.SetValue("HAS_PROTECTEDSECTION", hasProtectedSection, true);
             g.SetValue("HAS_PRIVATESECTION", hasPrivateSection, true);
 
-
             tctx.PushGlobal(g);
             return tctx;
         }
 
+        /// <summary>
+        /// 为枚举创建模板上下文
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
         private static TemplateContext CreateContextForEnum(CodeEnum e)
         {
             var tctx = new TemplateContext { MemberRenamer = m => m.Name };

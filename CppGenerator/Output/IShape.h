@@ -24,22 +24,28 @@ class IShape
 {
 
 public:
-
-    IShape(); 
-    
-    virtual ~IShape();
+	
+	/**
+	* @brief 默认构造函数
+	*/
+	IShape();
+	
+	/**
+	* @brief 默认析构函数
+	*/
+	virtual ~IShape();
 
 	/**
 	* @brief 
 	* @return
 	*/
-	double Area();
+	virtual double Area() = 0;
 
 	/**
 	* @brief 
 	* @return
 	*/
-	virtual double Perimeter();
+	double Perimeter();
 
 };
 

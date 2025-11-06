@@ -10,10 +10,23 @@ using CppParser.Models;
 
 namespace CppGenerator.Services
 {
-    /// <summary>对模型做净化/兜底/排序/修复（不改变业务语义）。</summary>
+    /// <summary>
+    /// C++ 模型预处理器接口
+    /// </summary>
     public interface ICppModelPreprocessor
     {
+        /// <summary>
+        /// 预处理类模型
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         CodeClass ProcessClass(CodeClass model);
+
+        /// <summary>
+        /// 预处理枚举模型
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         CodeEnum ProcessEnum(CodeEnum model);
     }
 }

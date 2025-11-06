@@ -14,7 +14,7 @@
  * @enum Color
  * @brief 
  */
-enum class Color
+enum class Color : int
 {
   Red,       ///< 红色
   Green,       ///< 绿色

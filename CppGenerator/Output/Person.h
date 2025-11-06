@@ -35,10 +35,16 @@ class Person : public LivingBeing1, public LivingBeing2, public Realization1, pu
 {
 
 public:
-
-    Person(); 
-    
-    virtual ~Person();
+	
+	/**
+	* @brief 默认构造函数
+	*/
+	Person();
+	
+	/**
+	* @brief 默认析构函数
+	*/
+	virtual ~Person();
 
 	/**
 	* @brief 

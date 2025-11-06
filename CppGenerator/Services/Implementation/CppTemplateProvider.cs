@@ -13,14 +13,20 @@ namespace CppGenerator.Services
         private readonly string _interfaceHeaderPath;
         private readonly string _structHeaderPath;
 
-
         private Template? _classHeaderTpl;
         private Template? _classSourceTpl;
         private Template? _enumHeaderTpl;
         private Template? _interfaceHeaderTpl;
         private Template? _structfaceHeaderTpl;
 
-
+        /// <summary>
+        /// 构造函数.classHeaderTemplatePath、interfaceHeaderTemplatePath和structHeaderTemplatePath都使用同一个模板class_header.sbn
+        /// </summary>
+        /// <param name="classHeaderTemplatePath"></param>
+        /// <param name="classSourceTemplatePath"></param>
+        /// <param name="enumHeaderTemplatePath"></param>
+        /// <param name="interfaceHeaderTemplatePath"></param>
+        /// <param name="structHeaderTemplatePath"></param>
         public CppTemplateProvider(
             string classHeaderTemplatePath,
             string classSourceTemplatePath,
@@ -42,6 +48,11 @@ namespace CppGenerator.Services
         public Template GetInterfaceHeaderTemplate() => _interfaceHeaderTpl ??= Compile(_interfaceHeaderPath);
         public Template GetStructHeaderTemplate() => _structfaceHeaderTpl ??= Compile(_structHeaderPath);
 
+        /// <summary>
+        /// 编译指定路径的模板
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private static Template Compile(string path)
         {
             var text = File.ReadAllText(path);

@@ -1,4 +1,5 @@
-﻿/**
+﻿{{- # ===== 头文件注释注释 ===== -}}
+/**
  * @noop Automatically Generated Header File
  * @noop Copyright (C) 2025 shareetech.com
  * 
@@ -130,6 +131,7 @@
 {{- end -}}
 
 {{- "\n\n" -}}
+{{- # ===== 类注释 ===== -}}
 /**
  * @class {{c.Name}}
  * @brief {{c.Comment}}
@@ -183,7 +185,7 @@ class {{ c.Name }}{{ if all_base_classes.size > 0 }} : {{ for base in all_base_c
     {{- for p in c.Properties -}}
         {{- if p.Visibility == visibility -}}
 
-        {{- # ====== 成员注释 ====== -}}
+        {{- # ====== 成员变量注释 ====== -}}
         {{- "\n\t" -}}
         {{- "\n\t" -}}  /**
         {{- "\n\t" -}}  * @brief {{p.Comment}}
@@ -219,7 +221,7 @@ class {{ c.Name }}{{ if all_base_classes.size > 0 }} : {{ for base in all_base_c
         {{- # 角色名兜底：优先用 TargetRoleName；没有就用 TargetName 名 -}}
         {{- $role_raw  = (a.TargetRoleName != null && a.TargetRoleName != "") ? a.TargetRoleName : a.TargetName -}}
 
-        {{- # ====== 成员注释 ====== -}}
+        {{- # ====== 成员变量注释 ====== -}}
         {{- "\n\t" -}}
         {{- "\n\t" -}}  /**
         {{- "\n\t" -}}  * @brief 组合关系和聚合关系作为成员变量 {{$role_raw}}
@@ -247,7 +249,7 @@ class {{ c.Name }}{{ if all_base_classes.size > 0 }} : {{ for base in all_base_c
         {{- # 角色名兜底：优先用 TargetRoleName；没有就用 TargetName 名 -}}
         {{- $role_raw  = (a.TargetRoleName != null && a.TargetRoleName != "") ? a.TargetRoleName : a.TargetName -}}
 
-        {{- # ====== 成员注释 ====== -}}
+        {{- # ====== 成员变量注释 ====== -}}
         {{- "\n\t" -}}
         {{- "\n\t" -}}  /**
         {{- "\n\t" -}}  * @brief 关联和单向关联作为成员变量 {{$role_raw}}
@@ -266,9 +268,20 @@ class {{ c.Name }}{{ if all_base_classes.size > 0 }} : {{ for base in all_base_c
 public:
     {{- # === public 区 === -}}
     {{- visibility = $VIS_PUBLIC }}
-
+    {{- # ====== 默认构造函数注释 ====== -}}
+    {{- "\n\t" -}}
+    {{- "\n\t" -}}  /**
+    {{- "\n\t" -}}  * @brief 默认构造函数
+    {{- "\n\t" -}}  */
+    {{- "\n\t" -}}
     {{ c.Name }}(); 
     
+    {{- # ====== 默认析构函数注释 ====== -}}
+    {{- "\n\t" -}}
+    {{- "\n\t" -}}  /**
+    {{- "\n\t" -}}  * @brief 默认析构函数
+    {{- "\n\t" -}}  */
+    {{- "\n\t" -}}
     virtual ~{{ c.Name }}();    
     {{- generate_members -}}
 
