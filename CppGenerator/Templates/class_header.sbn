@@ -138,8 +138,8 @@ class {{ c.Name }}{{ if all_base_classes.size > 0 }} : {{ for base in all_base_c
         {{- "\n" -}}
         {{- returntype = (m.ReturnType != null) ? m.ReturnType : m.CustomReturnType -}}
         {{- "\n\t" -}}
-        {{- if m.IsPureVirtual == true }}virtual {{ end -}}
-        {{- if m.IsVirtual == true && m.IsPureVirtual != true }}virtual {{ end -}}
+        {{- if m.IsPureVirtual == true && m.IsVirtual != true m.IsStatic != true }}virtual {{ end -}}
+        {{- if m.IsVirtual == true && m.IsPureVirtual != true m.IsStatic != true }}virtual {{ end -}}
         {{- if m.IsStatic == true }}static {{ end -}}
         {{- returntype }} {{ m.Name }}(
             {{- if m.Parameters != null && m.Parameters.size > 0 -}}
@@ -149,7 +149,7 @@ class {{ c.Name }}{{ if all_base_classes.size > 0 }} : {{ for base in all_base_c
                 {{ ptype }} {{ p.Name }}
             {{- end -}}
             {{- end -}}
-        ){{- if m.IsPureVirtual == true }} = 0{{ end }};
+        ){{-  if m.IsPureVirtual == true && m.IsVirtual != true m.IsStatic != true }} = 0{{ end }};
         {{- end -}}
     {{- end -}}
     {{- end -}}
