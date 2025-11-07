@@ -16,11 +16,11 @@
 
 
 /**
- * @class Node
+ * @struct Node
  * @brief 
  * @details 
  */
-class Node
+struct Node
 {
 
 public:

@@ -27,11 +27,11 @@ class Company3;
 class Company4;
 
 /**
- * @class Person
+ * @struct Person
  * @brief 
  * @details 
  */
-class Person : public LivingBeing1, public LivingBeing2, public Realization1, public Realization1
+struct Person : public LivingBeing1, public LivingBeing2, public Realization1, public Realization1
 {
 
 public:
