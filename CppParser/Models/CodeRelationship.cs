@@ -32,9 +32,9 @@ namespace CppParser.Models
         public EnumClassType TargetStereotype { get; set; }
 
         /// <summary>
-        /// 记录原型中source多重性的字符串表示
+        /// source多重性
         /// </summary>
-        public string SourceMarkMultiplicity { get; set; }
+        public Tuple<string, string> sourcetMultiplicity { get; set; }
 
         /// <summary>
         /// target多重性
@@ -42,14 +42,14 @@ namespace CppParser.Models
         public Tuple<string, string> TargetMultiplicity { get; set; }
 
         /// <summary>
+        /// 记录原型中source多重性的字符串表示
+        /// </summary>
+        public string SourceMarkMultiplicity { get; set; }
+
+        /// <summary>
         /// 记录原型中target多重性的字符串表示
         /// </summary>
         public string TargetMarkMultiplicity { get; set; }
-
-        /// <summary>
-        /// target多重性固定大小（如有的话）
-        /// </summary>
-        public int? TargetFixedSize { get; set; }
 
         /// <summary>
         /// source成员名

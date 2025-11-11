@@ -15,6 +15,10 @@ namespace CppParser.Services.Implementation
         private readonly Stack<CodeClass> _classStack;
         private readonly Stack<EnumVisibility> _visibilityStack;
 
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="fileName"></param>
         public CppHeaderVisitor(string fileName)
         {
             _fileName = fileName;
@@ -24,19 +28,31 @@ namespace CppParser.Services.Implementation
             _visibilityStack.Push(EnumVisibility.Private); // 默认可见性
         }
 
+        /// <summary>
+        /// 访问翻译单元（Translation Unit）
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override object VisitTranslationUnit([NotNull] CPP14Parser.TranslationUnitContext context)
         {
             // 访问所有声明
             if (context.declarationseq()?.declaration() != null)
             {
+                // 遍历声明序列中的所有声明项
                 foreach (var declaration in context.declarationseq().declaration())
                 {
+                    //对每个声明项调用 Visit方法，触发相应的 VisitDeclaration方法。实现深度优先遍历语法树。
                     Visit(declaration);
                 }
             }
             return _headerFile;
         }
 
+        /// <summary>
+        /// 访问类说明符（Class Specifier）
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override object VisitClassSpecifier([NotNull] CPP14Parser.ClassSpecifierContext context)
         {
             var classHead = context.classHead();
@@ -81,6 +97,11 @@ namespace CppParser.Services.Implementation
             return codeClass;
         }
 
+        /// <summary>
+        /// 访问基类子句（Base Clause）
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="codeClass"></param>
         private void VisitBaseClause(CPP14Parser.BaseClauseContext context, CodeClass codeClass)
         {
             var baseSpecifierList = context.baseSpecifierList();
@@ -131,7 +152,7 @@ namespace CppParser.Services.Implementation
             var currentClass = _classStack.Peek();
 
             // 处理字段声明
-            if (context.declSpecifierSeq() != null && context.memberDeclaratorList() != null)
+            if (context.declSpecifierSeq() != null && context.memberDeclaratorList() != null && !IsFunctionDeclaration(context))
             {
                 VisitFieldDeclaration(context, currentClass, currentVisibility);
             }
@@ -282,6 +303,7 @@ namespace CppParser.Services.Implementation
         private string GetDeclSpecifierText(CPP14Parser.DeclSpecifierSeqContext context)
         {
             if (context == null) return string.Empty;
+            // 返回所有声明说明符的文本，例如：static const int* value;  // declSpecifier序列: static, const, int
             return string.Join(" ", context.declSpecifier().Select(ds => ds.GetText()));
         }
 
@@ -352,12 +374,166 @@ namespace CppParser.Services.Implementation
 
         private string GetDeclaratorText(CPP14Parser.DeclaratorContext declarator)
         {
-           
-            var pointerPart = declarator.pointerDeclarator()?.GetText() ?? "";
-            var noPointerPart = declarator.noPointerDeclarator()?.GetText() ?? "";
+            string pointerPart = "";
+            string noPointerPart = "";
+
+            // 检查是否是 pointerDeclarator
+            if (declarator.pointerDeclarator() != null)
+            {
+                var pointerDecl = declarator.pointerDeclarator();
+
+                // 获取指针操作符 (*, &, &&)
+                if (pointerDecl.pointerOperator() != null && pointerDecl.pointerOperator().Length > 0)
+                {
+                    var pointerOperators = pointerDecl.pointerOperator();
+                    pointerPart = string.Join(" ", pointerOperators.Select(po => po.GetText()));
+                }
+
+                // 获取非指针声明器部分
+                if (pointerDecl.noPointerDeclarator() != null)
+                {
+                    noPointerPart = GetNoPointerDeclaratorText(pointerDecl.noPointerDeclarator());
+                }
+            }
+            else if (declarator.noPointerDeclarator() != null)
+            {
+                // 直接的非指针声明器（无指针操作符）
+                noPointerPart = GetNoPointerDeclaratorText(declarator.noPointerDeclarator());
+            }
+
             return (pointerPart + " " + noPointerPart).Trim();
         }
 
+        // 重载版本处理 PointerDeclaratorContext
+        private string GetDeclaratorText(CPP14Parser.PointerDeclaratorContext pointerDecl)
+        {
+            if (pointerDecl == null) return string.Empty;
+
+            string pointerPart = "";
+            string noPointerPart = "";
+
+            // 处理指针操作符
+            if (pointerDecl.pointerOperator() != null && pointerDecl.pointerOperator().Length > 0)
+            {
+                var pointerOperators = pointerDecl.pointerOperator();
+                pointerPart = string.Join(" ", pointerOperators.Select(po => po.GetText()));
+            }
+
+            // 处理非指针部分
+            if (pointerDecl.noPointerDeclarator() != null)
+            {
+                noPointerPart = GetNoPointerDeclaratorText(pointerDecl.noPointerDeclarator());
+            }
+
+            return (pointerPart + " " + noPointerPart).Trim();
+        }
+
+        private string GetNoPointerDeclaratorText(CPP14Parser.NoPointerDeclaratorContext noPointerDecl)
+        {
+            // 递归处理嵌套的声明器
+            if (noPointerDecl.LeftParen() != null && noPointerDecl.RightParen() != null)
+            {
+                // 处理括号表达式，如: (ptr)
+                if (noPointerDecl.pointerDeclarator() != null)
+                {
+                    return GetDeclaratorText(noPointerDecl.pointerDeclarator());
+                }
+            }
+
+            // 获取声明器标识符
+            if (noPointerDecl.declaratorid() != null)
+            {
+                var declaratorId = noPointerDecl.declaratorid();
+                if (declaratorId.idExpression() != null)
+                {
+                    return declaratorId.idExpression().GetText();
+                }
+            }
+
+            // 处理数组声明
+            if (noPointerDecl.LeftBracket() != null && noPointerDecl.RightBracket() != null)
+            {
+                var arrayPart = noPointerDecl.LeftBracket().GetText();
+                if (noPointerDecl.constantExpression() != null)
+                {
+                    arrayPart += noPointerDecl.constantExpression().GetText();
+                }
+                arrayPart += noPointerDecl.RightBracket().GetText();
+
+                // 递归处理内部的声明器
+                if (noPointerDecl.noPointerDeclarator() != null)
+                {
+                    return GetNoPointerDeclaratorText(noPointerDecl.noPointerDeclarator()) + arrayPart;
+                }
+            }
+
+            // 处理函数参数
+            if (noPointerDecl.parametersAndQualifiers() != null)
+            {
+                var paramsText = noPointerDecl.parametersAndQualifiers().GetText();
+                if (noPointerDecl.noPointerDeclarator() != null)
+                {
+                    return GetNoPointerDeclaratorText(noPointerDecl.noPointerDeclarator()) + paramsText;
+                }
+                return paramsText;
+            }
+
+            return noPointerDecl.GetText();
+        }
+
+        private string ExtractDeclaratorName(CPP14Parser.DeclaratorContext declarator)
+        {
+            CPP14Parser.NoPointerDeclaratorContext noPointerDecl = null;
+
+            if (declarator.pointerDeclarator() != null)
+            {
+                noPointerDecl = declarator.pointerDeclarator().noPointerDeclarator();
+            }
+            else if (declarator.noPointerDeclarator() != null)
+            {
+                noPointerDecl = declarator.noPointerDeclarator();
+            }
+
+            if (noPointerDecl != null)
+            {
+                return ExtractNameFromNoPointerDeclarator(noPointerDecl);
+            }
+
+            return "(anonymous)";
+        }
+
+        private string ExtractNameFromNoPointerDeclarator(CPP14Parser.NoPointerDeclaratorContext noPointerDecl)
+        {
+            // 递归查找最内层的标识符
+            if (noPointerDecl.declaratorid() != null)
+            {
+                var declaratorId = noPointerDecl.declaratorid();
+                if (declaratorId.idExpression() != null)
+                {
+                    var idExpr = declaratorId.idExpression();
+                    if (idExpr.unqualifiedId() != null)
+                    {
+                        var unqualifiedId = idExpr.unqualifiedId();
+                        if (unqualifiedId.Identifier != null)
+                        {
+                            // 找到标识符
+                            //var identifierExpr = unqualifiedId.Identifier();
+
+                            return unqualifiedId.Identifier().GetText();
+                        }
+                    }
+                }
+                return declaratorId.GetText();
+            }
+
+            // 递归处理嵌套的声明器
+            if (noPointerDecl.noPointerDeclarator() != null)
+            {
+                return ExtractNameFromNoPointerDeclarator(noPointerDecl.noPointerDeclarator());
+            }
+
+            return noPointerDecl.GetText();
+        }
         private void ExtractFunctionInfo(CPP14Parser.DeclaratorContext declarator, CodeMethod method, bool isConstructorOrDestructor)
         {
             method.Name = GetDeclaratorName(declarator);

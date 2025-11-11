@@ -36,6 +36,9 @@ namespace CppParser.Services.Implementation
             var tree = parser.translationUnit();
 
             var visitor = new CppHeaderVisitor(fileName);
+            // 执行ANTLR4访问者模式遍历语法树，并将结果转换为CodeHeaderFile对象
+            // Visit会递归遍历整个语法树，从根节点开始访问所有子节点
+            // 在遍历过程中，会调用相应的 VisitXXX方法处理每种语法结构
             return visitor.Visit(tree) as CodeHeaderFile;
         }
     }

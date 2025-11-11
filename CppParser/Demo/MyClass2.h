@@ -1,6 +1,5 @@
-﻿class MyBaseClass
+﻿class MyClass :public MyBaseClass
 {
-private:
 	//int m_id;
 	//std::string m_name; // 成员变量
 	//int b = 1;
@@ -8,8 +7,10 @@ private:
 	//static int x = 1;
 	//const int y = 2;
 	//mutable int z = 3;
-	int* p;
-	int arr[10];
+	//static int* a;
+public:
+	//void test(int x);
 	int a;
+
 };
 
