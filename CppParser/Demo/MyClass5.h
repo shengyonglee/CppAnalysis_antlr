@@ -1,6 +1,10 @@
 ﻿class MyClass :public MyBaseClass
 {
 public:
+	MyClass() :m_data(0) {}
+
+	virtual ~MyClass() {}
+
 	int getData() const {
 		return m_data;
 	}
