@@ -148,82 +148,397 @@ namespace CppParser.Services.Implementation
         {
             if (_classStack.Count == 0) return null;
 
-            var currentVisibility = _visibilityStack.Peek();
-            var currentClass = _classStack.Peek();
-
-            // 处理字段声明
-            if (context.declSpecifierSeq() != null && context.memberDeclaratorList() != null && !IsFunctionDeclaration(context))
+            try
             {
-                VisitFieldDeclaration(context, currentClass, currentVisibility);
-            }
-            // 处理方法声明
-            else if (IsFunctionDeclaration(context))
-            {
-                VisitMethodDeclaration(context, currentClass, currentVisibility);
-            }
+                var currentVisibility = _visibilityStack.Peek();
+                var currentClass = _classStack.Peek();
 
-            return base.VisitMemberdeclaration(context);
+                // 处理字段声明（成员变量）
+                if (context.declSpecifierSeq() != null && context.memberDeclaratorList() != null && !IsFunctionDeclaration(context))
+                {
+                    var properties = ExtractPropertiesFromDeclaration(context, currentVisibility);
+                    if (properties != null && properties.Count > 0)
+                    {
+                        currentClass.Properties.AddRange(properties);
+                    }
+                }
+                // 处理方法声明（成员函数）
+                else if (IsFunctionDeclaration(context))
+                {
+                    var method = ExtractMethodFromDeclaration(context, currentVisibility);
+                    if (method != null)
+                    {
+                        currentClass.Methods.Add(method);
+                    }
+                }
+                // 处理嵌套类型声明（类、枚举等）。当前元模型只记录了嵌套的枚举类型
+                else if (context.declSpecifierSeq()?.GetText().Contains("enum") == true)
+                {
+                    // 嵌套类型会在相应的访问器方法中处理
+                    return base.VisitMemberdeclaration(context);
+                }
+
+                return base.VisitMemberdeclaration(context);
+            }
+            catch (Exception ex)
+            {
+                // 记录错误但继续处理
+                System.Diagnostics.Debug.WriteLine($"处理成员声明时出错: {ex.Message}");
+                return base.VisitMemberdeclaration(context);
+            }
         }
 
-        private void VisitFieldDeclaration(CPP14Parser.MemberdeclarationContext context, CodeClass currentClass, EnumVisibility visibility)
+        /// <summary>
+        /// 从成员声明中提取属性信息,支持多个声明如 "int a, b, c;"
+        /// </summary>
+        /// <param name="context">处理字段声明（成员变量）</param>  
+        /// <param name="visibility"></param>
+        /// <returns></returns>
+        private List<CodeProperty> ExtractPropertiesFromDeclaration(CPP14Parser.MemberdeclarationContext context, EnumVisibility visibility)
         {
-            var declSpecifierText = GetDeclSpecifierText(context.declSpecifierSeq());
-            var baseType = ExtractBaseType(declSpecifierText);
+            var properties = new List<CodeProperty>();
 
-            var memberDeclaratorList = context.memberDeclaratorList();
-            foreach (var memberDeclarator in memberDeclaratorList.memberDeclarator())
+            try
             {
-                var declarator = memberDeclarator.declarator();
-                if (declarator != null && !IsFunctionDeclarator(declarator))
+                var declarators = context.memberDeclaratorList().memberDeclarator();
+                string baseType = ExtractPropertyType(context.declSpecifierSeq()); 
+
+                foreach (var declarator in declarators)
                 {
-                    var propertyName = GetDeclaratorName(declarator);
-                    var propertyType = BuildFullType(baseType, declarator);
+                    // 获取完整的类型信息（包括指针、数组等修饰符）
+                    string fullType = BuildFullType(baseType, declarator);
+                    string propertyName = ExtractDeclaratorName(declarator);
 
                     var property = new CodeProperty
                     {
-                        Name = propertyName,
-                        Type = propertyType,
                         Visibility = visibility,
-                        DefaultValue = memberDeclarator.braceOrEqualInitializer()?.GetText() ?? string.Empty,
-                        IsStatic = declSpecifierText.Contains("static"),
+                        Name = propertyName,
+                        // 先记录完整类型，后面会做预处理
+                        Type = fullType, 
+                        IsStatic = context.declSpecifierSeq()?.GetText().Contains("static") == true,
+                        DefaultValue = ExtractDefaultValue(declarator)
                     };
 
-                    currentClass.Properties.Add(property);
+                    properties.Add(property);
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"提取属性时出错: {ex.Message}");
+            }
+
+            return properties;
+        }
+
+        private string BuildFullType(string baseType, CPP14Parser.MemberDeclaratorContext declarator)
+        {
+            string fullType = baseType;
+
+            // 处理指针声明器
+            if (declarator.declarator()?.pointerDeclarator() != null)
+            {
+                var pointerDecl = declarator.declarator().pointerDeclarator();
+
+                // 添加指针操作符 (*, &, &&)
+                if (pointerDecl.pointerOperator() != null)
+                {
+                    foreach (var pointerOp in pointerDecl.pointerOperator())
+                    {
+                        fullType += pointerOp.GetText(); // 添加 "*", "&", "&&"
+                    }
+                }
+
+                // 处理数组声明
+                fullType = ProcessArrayDeclarator(fullType, pointerDecl.noPointerDeclarator());
+            }
+            else if (declarator.declarator()?.noPointerDeclarator() != null)
+            {
+                // 直接处理非指针声明器（如数组）
+                fullType = ProcessArrayDeclarator(fullType, declarator.declarator().noPointerDeclarator());
+            }
+
+            return fullType.Trim();
+        }
+
+        private string ProcessArrayDeclarator(string currentType, CPP14Parser.NoPointerDeclaratorContext noPointerDecl)
+        {
+            if (noPointerDecl == null) return currentType;
+
+            string result = currentType;
+
+            // 递归处理数组维度
+            if (noPointerDecl.LeftBracket() != null && noPointerDecl.RightBracket() != null)
+            {
+                // 添加数组维度
+                string arrayPart = noPointerDecl.LeftBracket().GetText();
+                if (noPointerDecl.constantExpression() != null)
+                {
+                    arrayPart += noPointerDecl.constantExpression().GetText();
+                }
+                arrayPart += noPointerDecl.RightBracket().GetText();
+
+                result += arrayPart;
+
+                // 处理多维数组
+                if (noPointerDecl.noPointerDeclarator() != null)
+                {
+                    result = ProcessArrayDeclarator(result, noPointerDecl.noPointerDeclarator());
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 从声明说明符中提取属性类型 例如 "static const int* value;" 提取 "const int*"
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        private string ExtractPropertyType(CPP14Parser.DeclSpecifierSeqContext context)
+        {
+            if (context == null) return string.Empty;
+
+            var typeParts = new List<string>();
+
+            foreach (var declSpecifier in context.declSpecifier())
+            {
+                // 这里只会把语法文件中的 trailingTypeSpecifier 加入类型描述中。不会把 static mutable 修饰符加入类型描述
+                if (declSpecifier.typeSpecifier() != null)
+                {
+                    typeParts.Add(declSpecifier.GetText());
+                }
+            }
+
+            return string.Join(" ", typeParts).Trim();
+        }
+
+        private string ExtractDefaultValue(CPP14Parser.MemberDeclaratorContext declarator)
+        {
+            var initializer = declarator.braceOrEqualInitializer();
+            if (initializer != null)
+            {
+                // 提取 "= value" 或 "{value}" 部分
+                var initializerText = initializer.GetText();
+                if (initializerText.StartsWith("="))
+                {
+                    return initializerText.Substring(1).Trim();
+                }
+                return initializerText;
+            }
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 从声明中提取方法信息
+        /// </summary>
+        private CodeMethod ExtractMethodFromDeclaration(CPP14Parser.MemberdeclarationContext context, EnumVisibility visibility)
+        {
+            try
+            {
+                // 获取第一个声明器（方法声明）
+                var declarator = context.memberDeclaratorList()?.memberDeclarator()?.FirstOrDefault();
+                if (declarator == null) return null;
+
+                // 提取基础返回类型
+                string baseReturnType = ExtractPropertyType(context.declSpecifierSeq());
+
+                // 构建完整的方法信息
+                var methodInfo = ExtractMethodInfo(declarator.declarator(), baseReturnType);
+
+                var method = new CodeMethod
+                {
+                    Visibility = visibility,
+                    Name = methodInfo.Name,
+                    ReturnType = methodInfo.ReturnType,
+                    IsStatic = context.declSpecifierSeq()?.GetText().Contains("static") == true,
+                    IsVirtual = context.declSpecifierSeq()?.GetText().Contains("virtual") == true,
+                    IsPureVirtual = IsPureVirtualMethod(context),
+                    Parameters = methodInfo.Parameters
+                };
+
+                return method;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"提取方法时出错: {ex.Message}");
+                return null;
             }
         }
 
-        private void VisitMethodDeclaration(CPP14Parser.MemberdeclarationContext context, CodeClass currentClass, EnumVisibility visibility)
+        private (string Name, string ReturnType, List<CodeMethodParameter> Parameters) ExtractMethodInfo(CPP14Parser.DeclaratorContext declarator, string baseReturnType)
         {
-            var declSpecifierText = context.declSpecifierSeq() != null ?
-                GetDeclSpecifierText(context.declSpecifierSeq()) : string.Empty;
+            string methodName = ExtractMethodNameFromDeclarator(declarator);
+            string fullReturnType = baseReturnType;
+            var parameters = new List<CodeMethodParameter>();
 
-            var baseType = ExtractBaseType(declSpecifierText);
-            var isConstructorOrDestructor = string.IsNullOrEmpty(baseType);
-
-            var method = new CodeMethod
+            // 处理指针返回值（如: int* method()）
+            if (declarator.pointerDeclarator() != null)
             {
-                Visibility = visibility,
-                IsStatic = declSpecifierText.Contains("static"),
-                IsVirtual = declSpecifierText.Contains("virtual")
-            };
+                var pointerDecl = declarator.pointerDeclarator();
 
-            var memberDeclaratorList = context.memberDeclaratorList();
-            if (memberDeclaratorList != null)
-            {
-                foreach (var memberDeclarator in memberDeclaratorList.memberDeclarator())
+                // 添加指针操作符到返回类型
+                if (pointerDecl.pointerOperator() != null)
                 {
-                    var declarator = memberDeclarator.declarator();
-                    if (declarator != null && IsFunctionDeclarator(declarator))
+                    foreach (var pointerOp in pointerDecl.pointerOperator())
                     {
-                        ExtractFunctionInfo(declarator, method, isConstructorOrDestructor);
-                        break;
+                        fullReturnType += pointerOp.GetText();
+                    }
+                }
+
+                // 从指针声明器中提取方法名和参数
+                var noPointerDecl = pointerDecl.noPointerDeclarator();
+                if (noPointerDecl != null)
+                {
+                    methodName = ExtractMethodNameFromNoPointerDeclarator(noPointerDecl);
+                    parameters = ExtractParametersFromNoPointerDeclarator(noPointerDecl);
+                }
+            }
+            else if (declarator.noPointerDeclarator() != null)
+            {
+                // 直接处理非指针声明器
+                methodName = ExtractMethodNameFromNoPointerDeclarator(declarator.noPointerDeclarator());
+                parameters = ExtractParametersFromNoPointerDeclarator(declarator.noPointerDeclarator());
+            }
+
+            return (methodName, fullReturnType.Trim(), parameters);
+        }
+
+        private string ExtractMethodNameFromDeclarator(CPP14Parser.DeclaratorContext declarator)
+        {
+            // 使用现有的方法
+            return GetDeclaratorName(declarator);
+        }
+
+        private string ExtractMethodNameFromNoPointerDeclarator(CPP14Parser.NoPointerDeclaratorContext noPointerDecl)
+        {
+            if (noPointerDecl.declaratorid() != null)
+            {
+                var declaratorId = noPointerDecl.declaratorid();
+                if (declaratorId.idExpression() != null)
+                {
+                    return declaratorId.idExpression().GetText();
+                }
+                return declaratorId.GetText();
+            }
+
+            // 处理函数指针等复杂情况
+            if (noPointerDecl.noPointerDeclarator() != null)
+            {
+                return ExtractMethodNameFromNoPointerDeclarator(noPointerDecl.noPointerDeclarator());
+            }
+
+            return noPointerDecl.GetText();
+        }
+
+        private List<CodeMethodParameter> ExtractParametersFromNoPointerDeclarator(CPP14Parser.NoPointerDeclaratorContext noPointerDecl)
+        {
+            var parameters = new List<CodeMethodParameter>();
+
+            // 查找参数和限定符节点
+            var paramsAndQualifiers = noPointerDecl.parametersAndQualifiers();
+            if (paramsAndQualifiers != null)
+            {
+                var paramDeclarationClause = paramsAndQualifiers.parameterDeclarationClause();
+                if (paramDeclarationClause != null)
+                {
+                    var paramList = paramDeclarationClause.parameterDeclarationList();
+                    if (paramList != null)
+                    {
+                        foreach (var paramDeclaration in paramList.parameterDeclaration())
+                        {
+                            var parameter = ExtractParameterInfo(paramDeclaration);
+                            parameters.Add(parameter);
+                        }
                     }
                 }
             }
 
-            currentClass.Methods.Add(method);
+            return parameters;
         }
+
+        private CodeMethodParameter ExtractParameterInfo(CPP14Parser.ParameterDeclarationContext paramDeclaration)
+        {
+            // 复用现有的参数提取逻辑
+            var parameter = new CodeMethodParameter();
+
+            // 提取参数类型
+            string baseType = paramDeclaration.declSpecifierSeq() != null ?
+                ExtractPropertyType(paramDeclaration.declSpecifierSeq()) : string.Empty;
+
+            // 提取参数名和完整类型
+            if (paramDeclaration.declarator() != null)
+            {
+                parameter.Name = GetDeclaratorName(paramDeclaration.declarator());
+                string declaratorText = GetDeclaratorText(paramDeclaration.declarator());
+                parameter.Type = (baseType + " " + declaratorText).Trim();
+            }
+            else
+            {
+                // 没有声明器的情况（如匿名参数）
+                parameter.Name = string.Empty;
+                parameter.Type = baseType;
+            }
+
+            // 处理默认值
+            if (paramDeclaration.Assign() != null && paramDeclaration.initializerClause() != null)
+            {
+                parameter.DefaultValue = paramDeclaration.initializerClause().GetText();
+            }
+
+            return parameter;
+        }
+
+        /// <summary>
+        /// 提取声明器名称
+        /// </summary>
+        private string ExtractDeclaratorName(CPP14Parser.MemberDeclaratorContext declarator)
+        {
+            if (declarator.declarator()?.pointerDeclarator()?.noPointerDeclarator() != null)
+            {
+                return declarator.declarator().pointerDeclarator().noPointerDeclarator().GetText();
+            }
+            return declarator.GetText();
+        }
+
+        /// <summary>
+        /// 提取方法名称
+        /// </summary>
+        private string ExtractMethodName(CPP14Parser.MemberdeclarationContext context)
+        {
+            if (context.memberDeclaratorList()?.memberDeclarator()?.FirstOrDefault()?.declarator() != null)
+            {
+                return context.memberDeclaratorList().memberDeclarator().First().declarator().GetText();
+            }
+            return "unknown_method";
+        }
+
+        /// <summary>
+        /// 判断是否为纯虚函数
+        /// </summary>
+        private bool IsPureVirtualMethod(CPP14Parser.MemberdeclarationContext context)
+        {
+            return context.memberDeclaratorList()?.GetText().Contains("= 0") == true ||
+                   context.memberDeclaratorList()?.GetText().Contains("=0") == true;
+        }
+
+        /// <summary>
+        /// 提取方法参数
+        /// </summary>
+        private List<CodeMethodParameter> ExtractMethodParameters(CPP14Parser.MemberdeclarationContext context)
+        {
+            var parameters = new List<CodeMethodParameter>();
+
+            // 这里需要根据实际的语法规则来解析参数列表
+            // 简化实现，实际需要遍历参数声明
+            if (context.memberDeclaratorList()?.memberDeclarator()?.FirstOrDefault()?.declarator()?.pointerDeclarator()?.noPointerDeclarator()?.parametersAndQualifiers() != null)
+            {
+                var paramContext = context.memberDeclaratorList().memberDeclarator().First().declarator().pointerDeclarator().noPointerDeclarator().parametersAndQualifiers();
+                // 实际实现需要解析 parameterDeclarationList
+            }
+
+            return parameters;
+        }
+
 
         public override object VisitFunctionDefinition([NotNull] CPP14Parser.FunctionDefinitionContext context)
         {
@@ -300,6 +615,11 @@ namespace CppParser.Services.Implementation
 
         #region Helper Methods
 
+        /// <summary>
+        /// 从声明说明符中提取类型
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         private string GetDeclSpecifierText(CPP14Parser.DeclSpecifierSeqContext context)
         {
             if (context == null) return string.Empty;
@@ -366,11 +686,6 @@ namespace CppParser.Services.Implementation
             return "(anonymous)";
         }
 
-        private string BuildFullType(string baseType, CPP14Parser.DeclaratorContext declarator)
-        {
-            var declaratorText = GetDeclaratorText(declarator);
-            return (baseType + " " + declaratorText).Trim();
-        }
 
         private string GetDeclaratorText(CPP14Parser.DeclaratorContext declarator)
         {
@@ -481,27 +796,6 @@ namespace CppParser.Services.Implementation
             return noPointerDecl.GetText();
         }
 
-        private string ExtractDeclaratorName(CPP14Parser.DeclaratorContext declarator)
-        {
-            CPP14Parser.NoPointerDeclaratorContext noPointerDecl = null;
-
-            if (declarator.pointerDeclarator() != null)
-            {
-                noPointerDecl = declarator.pointerDeclarator().noPointerDeclarator();
-            }
-            else if (declarator.noPointerDeclarator() != null)
-            {
-                noPointerDecl = declarator.noPointerDeclarator();
-            }
-
-            if (noPointerDecl != null)
-            {
-                return ExtractNameFromNoPointerDeclarator(noPointerDecl);
-            }
-
-            return "(anonymous)";
-        }
-
         private string ExtractNameFromNoPointerDeclarator(CPP14Parser.NoPointerDeclaratorContext noPointerDecl)
         {
             // 递归查找最内层的标识符
@@ -560,28 +854,6 @@ namespace CppParser.Services.Implementation
                     }
                 }
             }
-        }
-
-        private CodeMethodParameter ExtractParameterInfo(CPP14Parser.ParameterDeclarationContext parameterDeclaration)
-        {
-            var parameter = new CodeMethodParameter();
-
-            var declSpecifierText = parameterDeclaration.declSpecifierSeq() != null ?
-                GetDeclSpecifierText(parameterDeclaration.declSpecifierSeq()) : string.Empty;
-
-            parameter.Type = ExtractBaseType(declSpecifierText);
-
-            var declarator = parameterDeclaration.declarator();
-            if (declarator != null)
-            {
-                parameter.Name = GetDeclaratorName(declarator);
-                var declaratorText = GetDeclaratorText(declarator);
-                parameter.Type += " " + declaratorText;
-            }
-
-            parameter.Type = parameter.Type.Trim();
-
-            return parameter;
         }
 
         private T FindNode<T>(IParseTree root) where T : class, IParseTree
