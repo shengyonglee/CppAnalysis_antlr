@@ -10,7 +10,7 @@ class Program
     static void Main(string[] args)
     {
         // 测试文件路径
-        string testHeaderPath = @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppParser\Demo\MyClass5.h";
+        string testHeaderPath = @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppParser\Demo\MyClass.h";
 
         if (!File.Exists(testHeaderPath))
         {
@@ -80,9 +80,9 @@ class Program
                     {
                         var modifiers = new System.Collections.Generic.List<string>();
                         if (property.IsStatic) modifiers.Add("static");
-
+                        var type = property.Type == string.Empty ? property.CustomType : property.Type;
                         var modText = modifiers.Any() ? $" [{string.Join(" ", modifiers)}]" : "";
-                        Console.WriteLine($"      {property.Visibility} {property.Type} {property.Name}{modText}");
+                        Console.WriteLine($"      {property.Visibility} {type} {property.Name}{modText}");
                         if (!string.IsNullOrEmpty(property.DefaultValue))
                             Console.WriteLine($"        Default: {property.DefaultValue}");
                     }
@@ -100,10 +100,14 @@ class Program
                         if (method.IsPureVirtual) modifiers.Add("= 0");
 
                         var modText = modifiers.Any() ? $" [{string.Join(" ", modifiers)}]" : "";
+
+                        // 这里输出参数类型的时候，如果p.Type为string.empty，则使用p.CustomType
                         var parameters = method.Parameters.Any()
-                            ? string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))
+                            ? string.Join(", ", method.Parameters.Select(p => $"{(p.Type == string.Empty ? p.CustomType : p.Type)} {p.Name}"))
                             : "";
 
+
+                        var returnType = method.ReturnType == string.Empty ? method.CustomReturnType : method.ReturnType;
                         Console.WriteLine($"      {method.Visibility} {method.ReturnType} {method.Name}({parameters}){modText}");
                     }
                 }
