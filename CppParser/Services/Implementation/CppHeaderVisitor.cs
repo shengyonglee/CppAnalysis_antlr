@@ -97,35 +97,6 @@ namespace CppParser.Services.Implementation
             return codeClass;
         }
 
-        /// <summary>
-        /// 访问基类子句（Base Clause）
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="codeClass"></param>
-        private void VisitBaseClause(CPP14Parser.BaseClauseContext context, CodeClass codeClass)
-        {
-            var baseSpecifierList = context.baseSpecifierList();
-            if (baseSpecifierList != null)
-            {
-                foreach (var baseSpecifier in baseSpecifierList.baseSpecifier())
-                {
-                    var baseType = baseSpecifier.baseTypeSpecifier();
-                    if (baseType != null)
-                    {
-                        var baseName = GetTypeText(baseType);
-                        if (!string.IsNullOrEmpty(baseName))
-                        {
-                            var generalization = new CodeGeneralization
-                            {
-                                TargetName = baseName.Trim()
-                            };
-                            codeClass.Generalizations.Add(generalization);
-                        }
-                    }
-                }
-            }
-        }
-
         public override object VisitAccessSpecifier([NotNull] CPP14Parser.AccessSpecifierContext context)
         {
             var visibilityText = context.GetText().ToLower();
@@ -187,6 +158,111 @@ namespace CppParser.Services.Implementation
                 return base.VisitMemberdeclaration(context);
             }
         }
+
+        public override object VisitFunctionDefinition([NotNull] CPP14Parser.FunctionDefinitionContext context)
+        {
+            if (_classStack.Count == 0) return base.VisitFunctionDefinition(context);
+
+            var currentVisibility = _visibilityStack.Peek();
+            var currentClass = _classStack.Peek();
+
+            var declSpecifierText = context.declSpecifierSeq() != null ?
+                GetDeclSpecifierText(context.declSpecifierSeq()) : string.Empty;
+
+            var baseType = ExtractBaseType(declSpecifierText);
+            var isConstructorOrDestructor = string.IsNullOrEmpty(baseType);
+
+            var method = new CodeMethod
+            {
+                Visibility = currentVisibility,
+                IsStatic = declSpecifierText.Contains("static"),
+                IsVirtual = declSpecifierText.Contains("virtual")
+            };
+
+            ExtractFunctionInfo(context.declarator(), method, isConstructorOrDestructor);
+
+            currentClass.Methods.Add(method);
+
+            return base.VisitFunctionDefinition(context);
+        }
+
+        public override object VisitEnumSpecifier([NotNull] CPP14Parser.EnumSpecifierContext context)
+        {
+            var enumHead = context.enumHead();
+            var enumName = enumHead.Identifier()?.GetText() ?? "AnonymousEnum";
+
+            var codeEnum = new CodeEnum
+            {
+                Name = enumName,
+                IsScoped = enumHead.enumkey().GetText().Contains("class") ||
+                          enumHead.enumkey().GetText().Contains("struct"),
+                UnderlyingType = enumHead.enumbase()?.typeSpecifierSeq()?.GetText() ?? "int",
+                Values = new Dictionary<string, string>()
+
+            };
+
+            // 处理枚举值
+            var enumeratorList = context.enumeratorList();
+            if (enumeratorList != null)
+            {
+                foreach (var enumeratorDefinition in enumeratorList.enumeratorDefinition())
+                {
+                    var enumerator = enumeratorDefinition.enumerator();
+                    var valueName = enumerator.Identifier()?.GetText();
+                    if (!string.IsNullOrEmpty(valueName))
+                    {
+                        // 往枚举值字典添加枚举值，初始中文名称为空
+                        if (!codeEnum.Values.ContainsKey(valueName))
+                        {
+                            codeEnum.Values[valueName] = string.Empty;
+                        }
+                    }
+                }
+            }
+
+            if (_classStack.Count > 0)
+            {
+                _classStack.Peek().Enums.Add(codeEnum);
+            }
+            else
+            {
+                _headerFile.Enums.Add(codeEnum);
+            }
+
+            return base.VisitEnumSpecifier(context);
+        }
+
+        #region Helper Methods
+
+        /// <summary>
+        /// 访问基类子句（Base Clause）
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="codeClass"></param>
+        private void VisitBaseClause(CPP14Parser.BaseClauseContext context, CodeClass codeClass)
+        {
+            var baseSpecifierList = context.baseSpecifierList();
+            if (baseSpecifierList != null)
+            {
+                foreach (var baseSpecifier in baseSpecifierList.baseSpecifier())
+                {
+                    var baseType = baseSpecifier.baseTypeSpecifier();
+                    if (baseType != null)
+                    {
+                        var baseName = GetTypeText(baseType);
+                        if (!string.IsNullOrEmpty(baseName))
+                        {
+                            var generalization = new CodeGeneralization
+                            {
+                                TargetName = baseName.Trim()
+                            };
+                            codeClass.Generalizations.Add(generalization);
+                        }
+                    }
+                }
+            }
+        }
+
 
         /// <summary>
         /// 从成员声明中提取属性信息,支持多个声明如 "int a, b, c;"
@@ -551,80 +627,7 @@ namespace CppParser.Services.Implementation
                    context.memberDeclaratorList()?.GetText().Contains("=0") == true;
         }
 
-        public override object VisitFunctionDefinition([NotNull] CPP14Parser.FunctionDefinitionContext context)
-        {
-            if (_classStack.Count == 0) return base.VisitFunctionDefinition(context);
 
-            var currentVisibility = _visibilityStack.Peek();
-            var currentClass = _classStack.Peek();
-
-            var declSpecifierText = context.declSpecifierSeq() != null ?
-                GetDeclSpecifierText(context.declSpecifierSeq()) : string.Empty;
-
-            var baseType = ExtractBaseType(declSpecifierText);
-            var isConstructorOrDestructor = string.IsNullOrEmpty(baseType);
-
-            var method = new CodeMethod
-            {
-                Visibility = currentVisibility,
-                IsStatic = declSpecifierText.Contains("static"),
-                IsVirtual = declSpecifierText.Contains("virtual")
-            };
-
-            ExtractFunctionInfo(context.declarator(), method, isConstructorOrDestructor);
-
-            currentClass.Methods.Add(method);
-
-            return base.VisitFunctionDefinition(context);
-        }
-
-        public override object VisitEnumSpecifier([NotNull] CPP14Parser.EnumSpecifierContext context)
-        {
-            var enumHead = context.enumHead();
-            var enumName = enumHead.Identifier()?.GetText() ?? "AnonymousEnum";
-
-            var codeEnum = new CodeEnum
-            {
-                Name = enumName,
-                IsScoped = enumHead.enumkey().GetText().Contains("class") ||
-                          enumHead.enumkey().GetText().Contains("struct"),
-                UnderlyingType = enumHead.enumbase()?.typeSpecifierSeq()?.GetText() ?? "int",
-                Values = new Dictionary<string, string>()
-
-            };
-
-            // 处理枚举值
-            var enumeratorList = context.enumeratorList();
-            if (enumeratorList != null)
-            {
-                foreach (var enumeratorDefinition in enumeratorList.enumeratorDefinition())
-                {
-                    var enumerator = enumeratorDefinition.enumerator();
-                    var valueName = enumerator.Identifier()?.GetText();
-                    if (!string.IsNullOrEmpty(valueName))
-                    {
-                        // 往枚举值字典添加枚举值，初始中文名称为空
-                        if (!codeEnum.Values.ContainsKey(valueName))
-                        {
-                            codeEnum.Values[valueName] = string.Empty;
-                        }
-                    }
-                }
-            }
-
-            if (_classStack.Count > 0)
-            {
-                _classStack.Peek().Enums.Add(codeEnum);
-            }
-            else
-            {
-                _headerFile.Enums.Add(codeEnum);
-            }
-
-            return base.VisitEnumSpecifier(context);
-        }
-
-        #region Helper Methods
 
         /// <summary>
         /// 从声明说明符中提取类型
@@ -705,7 +708,7 @@ namespace CppParser.Services.Implementation
             }
             return "(anonymous)";
         }
-        // 重载版本处理 PointerDeclaratorContext
+        
         private string GetDeclaratorText(CPP14Parser.PointerDeclaratorContext pointerDecl)
         {
             if (pointerDecl == null) return string.Empty;

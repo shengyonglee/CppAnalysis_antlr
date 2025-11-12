@@ -10,7 +10,7 @@ class Program
     static void Main(string[] args)
     {
         // 测试文件路径
-        string testHeaderPath = @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppParser\Demo\MyClass3.h";
+        string testHeaderPath = @"D:\work\learn\tools\vs\CppAnalysis_antlr\CppParser\Demo\MyClass5.h";
 
         if (!File.Exists(testHeaderPath))
         {
@@ -114,7 +114,12 @@ class Program
                     Console.WriteLine("    Nested Enums:");
                     foreach (var enumItem in classItem.Enums)
                     {
-                        Console.WriteLine($"      {enumItem.Name}");
+                        Console.WriteLine($"  {enumItem.Name} {(enumItem.IsScoped ? "(scoped)" : "")}");
+                        if (!string.IsNullOrEmpty(enumItem.UnderlyingType))
+                            Console.WriteLine($"    Underlying Type: {enumItem.UnderlyingType}");
+                        if (enumItem.Values.Any())
+                            Console.WriteLine($"    Values: {string.Join(", ", enumItem.Values)}");
+                        Console.WriteLine();
                     }
                 }
 
