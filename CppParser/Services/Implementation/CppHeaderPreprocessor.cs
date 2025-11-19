@@ -1,4 +1,5 @@
-﻿using CppParser.Models;
+﻿using CppParser.Enums;
+using CppParser.Models;
 using CppParser.Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -87,6 +88,27 @@ namespace CppParser.Services.Implementation
                     PreprocessMethod(method);
                 }
             }
+
+            // 获取除了构造函数和析构函数之外的所有方法
+            var nonConstructorDestructorMethods = codeClass.Methods
+                .Where(m => !IsConstructor(codeClass,m) && !IsDestructor(m))
+                .ToList();
+            // 统计纯虚方法的数量
+            int pureVirtualCount = nonConstructorDestructorMethods
+                .Count(m => m.IsPureVirtual);
+
+            int totalMethods = nonConstructorDestructorMethods.Count;
+
+            // 情况1：所有方法都是纯虚函数 -> 设置为interface类型
+            if (pureVirtualCount == totalMethods && totalMethods > 0)
+            {
+                codeClass.Stereotype = EnumClassType.Interface;
+            }
+            // 情况2：部分方法是纯虚函数 -> 设置为abstract class类型
+            else if (pureVirtualCount > 0 && pureVirtualCount < totalMethods)
+            {
+                codeClass.Stereotype = EnumClassType.AbstractClass;
+            }
         }
 
         /// <summary>
@@ -118,7 +140,7 @@ namespace CppParser.Services.Implementation
             // 预处理UnderlyingType
             if (property.Type != string.Empty)
             {
-                property.UnderlyingType = property.Type;
+                property.UnderlyingType = new List<string> { property.Type };
             }
         }
 
@@ -202,7 +224,7 @@ namespace CppParser.Services.Implementation
             // 预处理UnderlyingReturnType
             if (method.ReturnType != string.Empty)
             {
-                method.UnderlyingReturnType = method.ReturnType;
+                method.UnderlyingReturnType = new List<string> { method.ReturnType };
             }
 
             // 预处理参数
@@ -227,7 +249,7 @@ namespace CppParser.Services.Implementation
             // 预处理UnderlyingType
             if (parameter.Type != string.Empty)
             {
-                parameter.UnderlyingType = parameter.Type;
+                parameter.UnderlyingType = new List<string> { parameter.Type };
             }
         }
 
@@ -249,6 +271,38 @@ namespace CppParser.Services.Implementation
 
             // 如果不是已知的基础类型，返回空字符串表示自定义类型
             return string.Empty;
+        }
+
+        /// <summary>
+        /// 判断方法是否为构造函数
+        /// </summary>
+        /// <param name="method">方法对象</param>
+        /// <returns>是否为构造函数</returns>
+        private bool IsConstructor(CodeClass codeClass,CodeMethod method)
+        {
+            if (method == null) return false;
+
+            // 构造函数的判断逻辑：
+            // 1. 方法名与类名相同（可能需要从上下文获取类名）
+            // 2. 没有返回类型
+            // 3. 或者是标记为构造函数的特定类型
+            return (string.IsNullOrEmpty(method.ReturnType) && string.IsNullOrEmpty(method.CustomReturnType)) ||
+                   (method.Name?.Equals(codeClass?.Name, StringComparison.Ordinal) == true);
+        }
+
+        /// <summary>
+        /// 判断方法是否为析构函数
+        /// </summary>
+        /// <param name="method">方法对象</param>
+        /// <returns>是否为析构函数</returns>
+        private bool IsDestructor(CodeMethod method)
+        {
+            if (method == null) return false;
+
+            // 析构函数的判断逻辑：
+            // 1. 方法名以~开头
+            // 2. 或者是标记为析构函数的特定类型
+            return (method.Name?.StartsWith("~") == true);
         }
     }
 }

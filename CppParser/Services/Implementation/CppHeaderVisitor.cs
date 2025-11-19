@@ -198,6 +198,7 @@ namespace CppParser.Services.Implementation
                 // 构建方法信息
                 var methodInfo = ExtractMethodInfo(context.declarator(), baseReturnType);
                 bool isPointer = methodInfo.ReturnType.Contains("*") || methodInfo.ReturnType.Contains("&") || methodInfo.ReturnType.Contains("&&");
+                var underlyingReturnType = ExtractUnderlyingTypes(methodInfo.ReturnType);
 
                 var method = new CodeMethod
                 {
@@ -205,7 +206,7 @@ namespace CppParser.Services.Implementation
                     Name = methodInfo.Name,
                     ReturnType = methodInfo.ReturnType,
                     IsReturnPointer = isPointer,
-                    UnderlyingReturnType = ,
+                    UnderlyingReturnType = underlyingReturnType,
                     IsStatic = context.declSpecifierSeq()?.GetText().Contains("static") == true,
                     IsVirtual = context.declSpecifierSeq()?.GetText().Contains("virtual") == true,
                     Parameters = methodInfo.Parameters,
@@ -326,6 +327,7 @@ namespace CppParser.Services.Implementation
                     string fullType = BuildFullType(baseType, declarator.declarator());
                     string propertyName = ExtractDeclaratorName(declarator.declarator());
                     bool isPointer = fullType.Contains("*") || fullType.Contains("&") || fullType.Contains("&&");
+                    var underlyingTypes = ExtractUnderlyingTypes(fullType);
 
                     var property = new CodeProperty
                     {
@@ -334,7 +336,7 @@ namespace CppParser.Services.Implementation
                         // 先记录完整类型，后面会做预处理
                         Type = fullType,
                         IsPointer = isPointer,
-                        UnderlyingType = ,
+                        UnderlyingType = underlyingTypes,
                         IsStatic = context.declSpecifierSeq()?.GetText().Contains("static") == true,
                         DefaultValue = ExtractDefaultValue(declarator)
                     };
@@ -434,7 +436,7 @@ namespace CppParser.Services.Implementation
 
             foreach (var declSpecifier in context.declSpecifier())
             {
-                // 这里只会把语法文件中的 trailingTypeSpecifier 加入类型描述中。不会把 static mutable 修饰符加入类型描述
+                // 这里只会把语法文件中的 trailingTypeSpecifier 加入类型描述中。不会把 static mutable extern 修饰符加入类型描述
                 if (declSpecifier.typeSpecifier() != null)
                 {
                     typeParts.Add(declSpecifier.GetText());
@@ -486,6 +488,7 @@ namespace CppParser.Services.Implementation
                 // 构建完整的方法信息
                 var methodInfo = ExtractMethodInfo(declarator.declarator(), baseReturnType);
                 bool isPointer = methodInfo.ReturnType.Contains("*") || methodInfo.ReturnType.Contains("&") || methodInfo.ReturnType.Contains("&&");
+                var underlyingReturnType = ExtractUnderlyingTypes(methodInfo.ReturnType);
 
                 var method = new CodeMethod
                 {
@@ -493,7 +496,7 @@ namespace CppParser.Services.Implementation
                     Name = methodInfo.Name,
                     ReturnType = methodInfo.ReturnType,
                     IsReturnPointer = isPointer,
-                    UnderlyingReturnType = ,
+                    UnderlyingReturnType = underlyingReturnType,
                     IsStatic = context.declSpecifierSeq()?.GetText().Contains("static") == true,
                     IsVirtual = context.declSpecifierSeq()?.GetText().Contains("virtual") == true,
                     IsPureVirtual = IsPureVirtualMethod(context),
@@ -620,7 +623,7 @@ namespace CppParser.Services.Implementation
             string fullType = BuildFullType(baseType, paramDeclaration.declarator());
             bool isPointer = fullType.Contains("*") || fullType.Contains("&") || fullType.Contains("&&");
             parameter.IsPointer = isPointer;
-            parameter.UnderlyingType = ;
+            parameter.UnderlyingType = ExtractUnderlyingTypes(fullType);
 
             // 提取参数名和完整类型
             if (paramDeclaration.declarator() != null)
@@ -787,6 +790,246 @@ namespace CppParser.Services.Implementation
             }
 
             return null;
+        }
+
+
+        /// <summary>
+        /// 提取底层类型列表，去除所有修饰符和容器包装
+        /// </summary>
+        /// <param name="typeString">完整类型字符串</param>
+        /// <returns>底层类型列表</returns>
+        private List<string> ExtractUnderlyingTypes(string typeString)
+        {
+            var underlyingTypes = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(typeString))
+                return underlyingTypes;
+
+            try
+            {
+                // 去除指针、引用等修饰符
+                string cleanType = RemovePointerAndReferenceModifiers(typeString);
+
+                // 处理容器类型（如vector、list等）
+                if (IsContainerType(cleanType))
+                {
+                    // 提取容器内的模板参数类型
+                    var templateTypes = ExtractTemplateParameters(cleanType);
+                    foreach (var templateType in templateTypes)
+                    {
+                        // 递归处理嵌套的容器类型
+                        underlyingTypes.AddRange(ExtractUnderlyingTypes(templateType));
+                    }
+                }
+                else
+                {
+                    // 处理非容器类型
+                    string baseType = ExtractBaseType(cleanType);
+                    if (!string.IsNullOrEmpty(baseType))
+                    {
+                        underlyingTypes.Add(baseType);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"提取底层类型时出错: {ex.Message}");
+            }
+
+            return underlyingTypes.Distinct().ToList();
+        }
+
+        /// <summary>
+        /// 去除指针、引用等修饰符
+        /// </summary>
+        /// <param name="typeString"></param>
+        /// <returns></returns>
+        private string RemovePointerAndReferenceModifiers(string typeString)
+        {
+            if (string.IsNullOrWhiteSpace(typeString))
+                return typeString;
+
+            // 去除指针符号 (*)
+            string result = typeString.Replace("*", "").Replace("&", "").Trim();
+
+            // 去除const、volatile等限定符
+            result = System.Text.RegularExpressions.Regex.Replace(result, @"\b(const|volatile|mutable)\b", "").Trim();
+
+            // 去除多余的空格
+            result = System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ");
+
+            return result.Trim();
+        }
+
+        /// <summary>
+        /// 提取模板参数，支持嵌套模板
+        /// </summary>
+        /// <param name="containerType"></param>
+        /// <returns></returns>
+        private List<string> ExtractTemplateParameters(string containerType)
+        {
+            var templateTypes = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(containerType))
+                return templateTypes;
+
+            try
+            {
+                // 找到第一个'<'的位置
+                int startIndex = containerType.IndexOf('<');
+                if (startIndex == -1)
+                    return templateTypes;
+
+                // 使用栈来匹配嵌套的模板
+                int bracketCount = 0;
+                int endIndex = startIndex;
+
+                for (int i = startIndex; i < containerType.Length; i++)
+                {
+                    char c = containerType[i];
+                    if (c == '<')
+                    {
+                        bracketCount++;
+                    }
+                    else if (c == '>')
+                    {
+                        bracketCount--;
+                        if (bracketCount == 0)
+                        {
+                            endIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (bracketCount == 0 && endIndex > startIndex)
+                {
+                    // 提取模板参数内容（不包含外层的<>）
+                    string templateParams = containerType.Substring(startIndex + 1, endIndex - startIndex - 1).Trim();
+
+                    // 分割模板参数（考虑嵌套模板的情况）
+                    var parameters = SplitTemplateParameters(templateParams);
+                    templateTypes.AddRange(parameters);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"提取模板参数时出错: {ex.Message}");
+            }
+
+            return templateTypes;
+        }
+
+        /// <summary>
+        /// 分割模板参数，考虑嵌套模板的情况
+        /// </summary>
+        /// <param name="templateParams"></param>
+        /// <returns></returns>
+        private List<string> SplitTemplateParameters(string templateParams)
+        {
+            var parameters = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(templateParams))
+                return parameters;
+
+            try
+            {
+                int bracketCount = 0;
+                int angleBracketCount = 0;
+                int startIndex = 0;
+
+                for (int i = 0; i < templateParams.Length; i++)
+                {
+                    char c = templateParams[i];
+
+                    if (c == '<') angleBracketCount++;
+                    else if (c == '>') angleBracketCount--;
+                    else if (c == '(') bracketCount++;
+                    else if (c == ')') bracketCount--;
+
+                    // 只有在顶层且没有括号嵌套时，才按逗号分割
+                    if (c == ',' && angleBracketCount == 0 && bracketCount == 0)
+                    {
+                        string param = templateParams.Substring(startIndex, i - startIndex).Trim();
+                        if (!string.IsNullOrEmpty(param))
+                            parameters.Add(param);
+
+                        startIndex = i + 1;
+                    }
+                }
+
+                // 添加最后一个参数
+                string lastParam = templateParams.Substring(startIndex).Trim();
+                if (!string.IsNullOrEmpty(lastParam))
+                    parameters.Add(lastParam);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"分割模板参数时出错: {ex.Message}");
+            }
+
+            return parameters;
+        }
+
+        /// <summary>
+        /// 判断类型字符串是否为容器类型，当前支持常见STL容器
+        /// </summary>
+        /// <param name="typeString"></param>
+        /// <returns></returns>
+        private bool IsContainerType(string typeString)
+        {
+            if (string.IsNullOrWhiteSpace(typeString))
+                return false;
+
+            // 先检查是否包含模板参数
+            if (!typeString.Contains("<") || !typeString.Contains(">"))
+                return false;
+
+            // 匹配常见的STL容器类型（只匹配类型名部分）
+            var containerPatterns = new[]
+            {
+                @"^(.*\s)?(std::)?vector\b",
+                @"^(.*\s)?(std::)?list\b",
+                @"^(.*\s)?(std::)?map\b",
+                @"^(.*\s)?(std::)?set\b",
+                @"^(.*\s)?(std::)?unordered_map\b",
+                @"^(.*\s)?(std::)?unordered_set\b",
+                @"^(.*\s)?(std::)?array\b",
+                @"^(.*\s)?(std::)?deque\b",
+                @"^(.*\s)?(std::)?queue\b",
+                @"^(.*\s)?(std::)?stack\b",
+                @"^(.*\s)?(std::)?priority_queue\b"
+            };
+
+            return containerPatterns.Any(pattern =>
+                System.Text.RegularExpressions.Regex.IsMatch(typeString, pattern));
+        }
+
+        /// <summary>
+        /// 提取基础类型，去除数组和函数指针等复杂声明
+        /// </summary>
+        /// <param name="typeString"></param>
+        /// <returns></returns>
+        private string ExtractBaseType(string typeString)
+        {
+            if (string.IsNullOrWhiteSpace(typeString))
+                return typeString;
+
+            // 去除数组维度
+            string result = System.Text.RegularExpressions.Regex.Replace(typeString, @"\[[^\]]*\]", "").Trim();
+
+            // 去除函数指针等复杂声明
+            if (result.Contains("("))
+            {
+                // 如果是函数指针，只取返回类型部分
+                var match = System.Text.RegularExpressions.Regex.Match(result, @"^([^(]*)\s*\([^)]*\)");
+                if (match.Success)
+                {
+                    result = match.Groups[1].Value.Trim();
+                }
+            }
+
+            return result.Trim();
         }
 
         #endregion

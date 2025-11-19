@@ -27,7 +27,7 @@ namespace CppParser.Models
         /// <summary>
         /// 方法的底层返回类型（用于记录原始类型信息）。去除vector、std::<vector>、 * 、& 、&& 的returnType/customReturnType
         /// </summary>
-        public string UnderlyingReturnType { get; set; }
+        public List<string> UnderlyingReturnType { get; set; }
 
         /// <summary>
         /// 方法参数列表

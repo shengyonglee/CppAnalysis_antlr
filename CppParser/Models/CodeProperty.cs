@@ -28,7 +28,7 @@ namespace CppParser.Models
         /// <summary>
         /// 属性的底层类型（用于记录原始类型信息）。去除vector、std::<vector>、 * 、& 、&& 的type/customType
         /// </summary>
-        public string UnderlyingType { get; set; }
+        public List<string> UnderlyingType { get; set; }
 
         /// <summary>
         /// 多重性，用于记录数组维度（只考虑一维，如果是多维参考rhapsody类型放在customType）

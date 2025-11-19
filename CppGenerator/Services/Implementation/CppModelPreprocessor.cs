@@ -87,9 +87,15 @@ namespace CppGenerator.Services
             }
 
             // 4. 处理聚合、组合关系。如果TargetName和model.Name相同，移除该关系
-            if (model.Associations != null)
+            if (model.Compositions != null)
             {
-                model.Associations = model.Associations
+                model.Compositions = model.Compositions
+                    .Where(a => !string.Equals(a.TargetName, model.Name, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            if (model.Aggregations != null)
+            {
+                model.Aggregations = model.Aggregations
                     .Where(a => !string.Equals(a.TargetName, model.Name, StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
