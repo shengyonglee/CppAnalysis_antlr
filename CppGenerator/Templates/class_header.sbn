@@ -52,15 +52,6 @@
   {{- end -}}
 {{- end -}}
 
-{{- # === 返回sourceName和targetName中不等于c.Name的字符串 === -}}
-{{ func get_non_equal_name(SourceName, TargetName, className) 
-    if SourceName != null && SourceName != className 
-      ret SourceName 
-    else if TargetName != null && TargetName != className 
-      ret TargetName 
-    end 
-end }}
-
 {{- "\n" -}}
 {{- # === 头文件 === -}}
 
@@ -111,13 +102,13 @@ end }}
 {{- if c.Associations != null && c.Associations.size > 0 }}
 // 关联关系
 {{- for b in c.Associations }}
-{{- if c.Associations.TargetStereotype !=$TYPE_ENUM }}
-{{- Association_type = c.Associations.TargetStereotype == $TYPE_STRUCT ? "struct" : "class" }}
-{{- Association_class  = get_non_equal_name b.SourceName b.TargetName c.Name -}}
-{{- if Association_class != "" }}
-{{ Association_type }} {{ Association_class }};
-{{- end }}
-{{- end }}
+{{- if b.SourceName == c.Name && b.TargetStereotype != $TYPE_ENUM }}
+{{- Association_type = b.TargetStereotype == $TYPE_STRUCT ? "struct" : "class" }}
+{{ Association_type}} {{ b.TargetName }};
+{{- else if b.TargetName == c.Name && b.SourceStereotype != $TYPE_ENUM }}
+{{- Association_type = b.SourceStereotype == $TYPE_STRUCT ? "struct" : "class" }}
+{{ Association_type }} {{ b.SourceName }};
+{{- end}}
 {{- end }}
 {{- end }}
 
@@ -125,8 +116,8 @@ end }}
 {{- if c.UnidirectionalAssociations != null && c.UnidirectionalAssociations.size > 0 }}
 // 单向关联关系
 {{- for b in c.UnidirectionalAssociations }}
-{{- if c.UnidirectionalAssociations.TargetStereotype != $TYPE_ENUM }}
-{{- Association_type = c.UnidirectionalAssociations.TargetStereotype == $TYPE_STRUCT ? "struct" : "class" }}
+{{- if b.TargetStereotype != $TYPE_ENUM }}
+{{- Association_type = b.TargetStereotype == $TYPE_STRUCT ? "struct" : "class" }}
 {{ Association_type }} {{ b.TargetName }};
 {{- end }}
 {{- end }}
@@ -261,7 +252,7 @@ end }}
         {{- "\n\t" -}}  */
         {{- "\n\t" -}}
 
-        {{- map_mult a.TargetName+"*" $role_raw false a.SourceMultiplicity -}};
+        {{- map_mult a.TargetName+"*" $role_raw false a.TargetMultiplicity -}};
         
         {{- else if a.TargetName == c.Name -}}
         {{- # 角色名兜底：优先用 SourceRoleName；没有就用 SourceName 名 -}}
@@ -274,7 +265,7 @@ end }}
         {{- "\n\t" -}}  */
         {{- "\n\t" -}}
 
-        {{- map_mult a.SourceName+"*" $role_raw false a.TargetMultiplicity -}};
+        {{- map_mult a.SourceName+"*" $role_raw false a.SourceMultiplicity -}};
 
         {{- end -}}
         {{- end -}}

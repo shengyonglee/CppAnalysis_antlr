@@ -24,7 +24,6 @@
 // 关联关系
 class Company2;
 class Company3;
-class Company4;
 // 单向关联关系
 class Company5;
 
@@ -111,12 +110,12 @@ public:
 	/**
 	* @brief 关联关系成员变量 employer1
 	*/
-	Company2* employer1;
+	Company2* employer1[0];
 	
 	/**
 	* @brief 关联关系成员变量 employer2
 	*/
-	Company3* employer2;
+	std::vector<Company3*> employer2;
 	
 	/**
 	* @brief 单向关联关系成员变量 employer4

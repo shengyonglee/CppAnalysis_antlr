@@ -14,6 +14,10 @@
 #include <vector>
 
 
+// 关联关系
+struct Node2;
+// 单向关联关系
+struct Node1;
 
 /**
  * @struct Node
@@ -44,6 +48,16 @@ public:
 	* @brief 
 	*/
 	Node right;
+	
+	/**
+	* @brief 关联关系成员变量 prev
+	*/
+	Node2* prev;
+	
+	/**
+	* @brief 单向关联关系成员变量 next
+	*/
+	Node1* next;
 
 };
 
